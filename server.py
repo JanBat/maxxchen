@@ -107,7 +107,7 @@ def handle_client(client):  # Takes client socket as argument.
     gameState.names[client] = name
     client.send(bytes(welcome, "utf8"))
     msg = "%s has joined the chat!" % name
-    broadcast(bytes(msg, "utf8"))
+    broadcast(msg)
     clients[client] = name  # store name to the GameState
 
     while True:
@@ -129,7 +129,7 @@ def handle_client(client):  # Takes client socket as argument.
 
 def broadcast(msg, prefix=""):  # prefix is for name identification.
     """Broadcasts a message to all the clients."""
-
+    # TODO: have byte encoding and decoding happen in exactly 1 place respectively
     for sock in clients:
         sock.send(bytes(prefix+msg, "utf8"))
 
@@ -144,7 +144,6 @@ ADDR = (HOST, PORT)
 
 SERVER = socket(AF_INET, SOCK_STREAM)
 SERVER.bind(ADDR)
-
 
 
 if __name__ == "__main__":
