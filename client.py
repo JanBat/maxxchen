@@ -5,6 +5,11 @@ from threading import Thread
 import tkinter
 
 
+############<GAME LOGIC>##################
+GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
+
+
+############</GAME LOGIC>#################
 def receive():
     """Handles receiving of messages."""
     while True:
@@ -23,6 +28,24 @@ def send(event=None):  # event is passed by binders.
     if msg == "{quit}":
         client_socket.close()
         top.quit()
+
+def set_name(event=None):  # event is passed by binders.
+    """Handles sending of messages."""
+    msg = my_msg.get()
+    my_msg.set("")  # Clears input field.
+    client_socket.send(bytes(f"{GAMESTATE_UPDATE_PREFIX}SET_NAME{msg}", "utf8"))
+
+def roll_dies(event=None):  # event is passed by binders.
+    msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
+    client_socket.send(bytes(msg, "utf8"))
+
+def pass_dies(event=None):  # event is passed by binders.
+    msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
+    client_socket.send(bytes(msg, "utf8"))
+
+def reveal_dies(event=None):  # event is passed by binders.
+    msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
+    client_socket.send(bytes(msg, "utf8"))
 
 
 def on_closing(event=None):
@@ -47,8 +70,16 @@ messages_frame.pack()
 entry_field = tkinter.Entry(top, textvariable=my_msg)
 entry_field.bind("<Return>", send)
 entry_field.pack()
-send_button = tkinter.Button(top, text="Send", command=send)
-send_button.pack()
+roll_button = tkinter.Button(top, text="Roll", command=roll_dies)
+roll_button.pack()
+pass_button = tkinter.Button(top, text="Pass", command=pass_dies)
+pass_button.pack()
+reveal_button = tkinter.Button(top, text="Reveal", command=reveal_dies)
+reveal_button.pack()
+name_button = tkinter.Button(top, text="Set Name", command=set_name)
+name_button.pack()
+
+
 
 top.protocol("WM_DELETE_WINDOW", on_closing)
 
