@@ -21,6 +21,7 @@ def receive():
     while True:
         try:
             msg = connection_data['client_socket'].recv(BUFSIZ).decode("utf8")
+            print(f"received message: \n{msg}")
             if msg.startswith(PRIVATE_MSG_PREFIX):
                 msg = msg.replace(PRIVATE_MSG_PREFIX, "")
                 private_msg_box_str.set(msg)
@@ -114,9 +115,7 @@ pass_button = tkinter.Button(top, text="Passen", command=pass_dies)
 pass_button.pack(side=tkinter.LEFT)
 reveal_button = tkinter.Button(top, text="Aufdecken", command=reveal_dies)
 reveal_button.pack(side=tkinter.LEFT)
-player_button_str = tkinter.StringVar()
-player_button_str.set("Mitspielen")
-player_button = tkinter.Button(top, textvariable=player_button_str, command=set_player)
+player_button = tkinter.Button(top, text="Mitspielen", command=set_player)
 player_button.pack(side=tkinter.LEFT)
 # name_button = tkinter.Button(top, text="Set Name", command=set_name)
 # name_button.pack()
