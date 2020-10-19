@@ -114,7 +114,7 @@ def accept_incoming_connections():
         print("%s:%s has connected." % client_address)
         client.send(bytes(f"{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxchen? \n ..bitte Name eingeben =)", "utf8"))
         addresses[client] = client_address
-        #gameState.player_queue.append(client)
+        clients.append(client)
         Thread(target=handle_client, args=(client,)).start()
 
 
