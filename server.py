@@ -40,6 +40,8 @@ class GameState:
             output += f"{self.names[player]}\n"
         broadcast(prefix=PLAYER_LIST_MSG_PREFIX, msg=output)
         print(f"broadcasting player list update: \n {output}")
+        if self.player_queue:
+            self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
 
     def update(self, client, message: str):
         """
