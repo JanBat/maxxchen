@@ -9,6 +9,8 @@ from typing import List
 
 ###CONSTANTS###
 GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
+PRIVATE_MSG_PREFIX = 'PRIVATE: '
+PUBLIC_MSG_PREFIX = 'PUBLIC: '
 
 
 ###############
@@ -26,7 +28,7 @@ class GameState:
         :return:
         """
         self.player_queue = self.player_queue[1:]+[self.player_queue[0]]
-        self.player_queue[0].send(bytes("it's your turn!", "utf8"))
+        self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
 
     def update(self, client, message: str):
         """
@@ -53,12 +55,12 @@ class GameState:
             self.end_turn()
         elif message.startswith("REVEAL_DICE"):
             if self.player_queue[0] == client:
-                broadcast(f"{self.names[client]} reveals the dies: {self.dies}")
+                broadcast(f"{self.names[client]} deckt auf: {self.dies}")
                 self.end_turn()
         elif message.startswith("ROLL_DICE"):
             if self.player_queue[0] == client:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
-                self.player_queue[0].send(bytes(f"you've rolled {self.dies}", "utf8"))
+                self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Deine Würfel: {self.dies}", "utf8"))
                 self.end_turn()
         elif message.startswith("SET_NAME"):
             self.names[client] = message.remove("SET_NAME")
@@ -93,7 +95,7 @@ def accept_incoming_connections():
     while True:
         client, client_address = SERVER.accept()
         print("%s:%s has connected." % client_address)
-        client.send(bytes("Greetings from the cave! Now type your name and press enter!", "utf8"))
+        client.send(bytes(f"{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxchen? \n ..bitte Name eingeben =)", "utf8"))
         addresses[client] = client_address
         gameState.player_queue.append(client)
         Thread(target=handle_client, args=(client,)).start()
@@ -103,7 +105,7 @@ def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
     name = client.recv(BUFSIZ).decode("utf8")
-    welcome = 'Welcome %s! If you ever want to quit, type {quit} to exit.' % name
+    welcome = f'{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
     gameState.names[client] = name
     client.send(bytes(welcome, "utf8"))
     msg = "%s has joined the chat!" % name
@@ -117,9 +119,8 @@ def handle_client(client):  # Takes client socket as argument.
         if msg.startswith(f"{GAMESTATE_UPDATE_PREFIX}"):
             print("message started with gamestate update prefix!")
             gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
-        elif msg != bytes("{quit}", "utf8"):
-            broadcast(msg, name + ": ")
         else:
+            print(f"client{client} sent unexpected message: {msg}; closing connection")
             client.send(bytes("{quit}", "utf8"))
             client.close()
             del clients[client]
@@ -127,7 +128,7 @@ def handle_client(client):  # Takes client socket as argument.
             break
 
 
-def broadcast(msg, prefix=""):  # prefix is for name identification.
+def broadcast(msg, prefix=PUBLIC_MSG_PREFIX):  # prefix is for name identification.
     """Broadcasts a message to all the clients."""
     # TODO: have byte encoding and decoding happen in exactly 1 place respectively
     for sock in clients:
