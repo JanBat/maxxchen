@@ -31,11 +31,9 @@ def receive():
                 msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
                 player_list_box_str.set(msg)
             elif msg.startswith(SET_PLAYER):
-                player_button.bind(func=set_spectator)
-                player_button_str.set("Zuschauen")
+                player_button.configure(text="Zuschauen", command=set_spectator)
             elif msg.startswith(SET_SPECTATOR):
-                player_button.bind(func=set_player)
-                player_button_str.set("Mitspielen")
+                player_button.configure(text="Mitspielen", command=set_player)
             else:
                 print(f"message neither public nor private: {msg}")
             # public or private message?

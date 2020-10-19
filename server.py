@@ -39,6 +39,7 @@ class GameState:
         for player in self.player_queue:
             output += f"{self.names[player]}\n"
         broadcast(prefix=PLAYER_LIST_MSG_PREFIX, msg=output)
+        print(f"broadcasting player list update: \n {output}")
 
     def update(self, client, message: str):
         """
