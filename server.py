@@ -154,7 +154,7 @@ def broadcast(msg, prefix=PUBLIC_MSG_PREFIX):  # prefix is for name identificati
 
 
 
-clients = {}
+clients = []
 addresses = {}
 
 HOST = ''
