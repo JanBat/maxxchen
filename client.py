@@ -12,6 +12,7 @@ PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
+QUIT = "{quit}"
 
 ############</GAME LOGIC>#################
 BUFSIZ = 1024
@@ -35,6 +36,8 @@ def receive():
                 player_button.configure(text="Zuschauen", command=set_spectator)
             elif msg.startswith(SET_SPECTATOR):
                 player_button.configure(text="Mitspielen", command=set_player)
+            elif msg.startswith(QUIT):
+                break
             else:
                 print(f"message neither public nor private: {msg}")
             # public or private message?
@@ -76,7 +79,6 @@ def on_closing(event=None):
     """This function is to be called when the window is closed."""
     connection_data['client_socket'].send(bytes("{quit}", "utf8"))
     top.quit()
-
 top = tkinter.Tk()
 top.title("Maxxchen")
 
