@@ -111,6 +111,7 @@ gameState = GameState()  # because global variables are fun
 
 def accept_incoming_connections():
     """Sets up handling for incoming clients."""
+
     while True:
         client, client_address = SERVER.accept()
         print("%s:%s has connected." % client_address)
@@ -139,7 +140,9 @@ def handle_client(client):  # Takes client socket as argument.
             print(f"client{client} sent unexpected message: {msg}; closing connection")
             client.send(bytes("{quit}", "utf8"))
             client.close()
+            clients.remove(client)
             del gameState.names[client]
+            del addresses[client]
             broadcast(bytes("%s has left the chat." % name, "utf8"))
             break
 
