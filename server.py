@@ -139,7 +139,7 @@ def handle_client(client):  # Takes client socket as argument.
             gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
         else:
             print(f"client{client} sent unexpected message: {msg}; closing connection")
-            client.send(bytes("{quit}", "utf8"))
+            client.send(bytes(QUIT, "utf8"))
             client.close()
             clients.remove(client)
             del gameState.names[client]

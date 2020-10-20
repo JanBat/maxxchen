@@ -77,20 +77,49 @@ def set_spectator(event=None):  # event is passed by binders.
 
 def on_closing(event=None):
     """This function is to be called when the window is closed."""
-    connection_data['client_socket'].send(bytes("{quit}", "utf8"))
+    connection_data['client_socket'].send(bytes(QUIT, "utf8"))
     top.quit()
+
+def set_host(event=None):
+    connection_data["HOST"] = my_msg.get()
+    my_msg.set("63001")
+    entry_field.bind("<Return>", set_PORT)
+    private_msg_box_str.set("Bitte Port eingeben!")
+
+def set_PORT(event=None):
+    connection_data["PORT"] = my_msg.get()
+    my_msg.set("TestName1")
+    entry_field.bind("<Return>", set_name)
+    connect()
+
+def set_name(event=None):  # event is passed by binders.
+    """Sends the initial "name" message."""
+    msg = my_msg.get()
+    my_msg.set("")  # Clears input field.
+    connection_data['client_socket'].send(bytes(msg, "utf8"))
+    entry_field.destroy()
+
+def connect():
+    if not connection_data["PORT"]:
+        connection_data["PORT"] = 63001
+    else:
+        connection_data["PORT"] = int(connection_data["PORT"])
+
+
+    ADDR = (connection_data["HOST"], connection_data["PORT"])
+
+    connection_data['client_socket'] = socket(AF_INET, SOCK_STREAM)
+    connection_data['client_socket'].connect(ADDR)
+
+    receive_thread = Thread(target=receive)
+    receive_thread.start()
+
 top = tkinter.Tk()
 top.title("Maxxchen")
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()  # For the messages to be sent.
 my_msg.set("--blank default message--")
-#scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
-# Following will contain the messages.
-#msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
-#scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-#msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
-#msg_list.pack()
 
 public_msg_box_str = tkinter.StringVar()
 public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
@@ -137,55 +166,10 @@ connection_data = {
 }
 
 
-def set_host(event=None):
-    connection_data["HOST"] = my_msg.get()
-    my_msg.set("63001")
-    entry_field.bind("<Return>", set_PORT)
-    private_msg_box_str.set("Bitte Port eingeben!")
 
-def set_PORT(event=None):
-    connection_data["PORT"] = my_msg.get()
-    my_msg.set("TestName1")
-    entry_field.bind("<Return>", set_name)
-    connect()
-
-def set_name(event=None):  # event is passed by binders.
-    """Sends the initial "name" message."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-    entry_field.destroy()
-
-def connect():
-    if not connection_data["PORT"]:
-        connection_data["PORT"] = 63001
-    else:
-        connection_data["PORT"] = int(connection_data["PORT"])
-
-
-    ADDR = (connection_data["HOST"], connection_data["PORT"])
-
-    connection_data['client_socket'] = socket(AF_INET, SOCK_STREAM)
-    connection_data['client_socket'].connect(ADDR)
-
-    receive_thread = Thread(target=receive)
-    receive_thread.start()
-
-#TODO: create proper disconnect function from this:
-
-'''
-def send(event=None):  # event is passed by binders.
-    """Handles sending of messages."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
-    if msg == "{quit}":
-        client_socket.close()
-        top.quit()
-'''
 
 entry_field.bind("<Return>", set_host)
-my_msg.set("192.168.1.9")
+my_msg.set("192.168.1.10")
 #PORT = input('Enter port: ')
 
 
