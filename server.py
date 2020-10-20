@@ -68,7 +68,8 @@ class GameState:
         """
         print(f"Updating GameState with message'{message}'")
         if message.startswith("PASS_DICE"):
-            self.end_turn()
+            if self.player_queue[0] == client:
+                self.end_turn()
         elif message.startswith("REVEAL_DICE"):
             if self.player_queue[0] == client:
                 broadcast(f"{self.names[client]} deckt auf: {self.dies}")
