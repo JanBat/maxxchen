@@ -6,13 +6,14 @@ import tkinter
 
 
 ############<GAME LOGIC>##################
+MESSAGE_SEPARATOR = "@"
 GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
-QUIT = "{quit}"
+QUIT = "QUIT"
 
 ############</GAME LOGIC>#################
 BUFSIZ = 1024
@@ -21,29 +22,31 @@ def receive():
     """Handles receiving of messages."""
     while True:
         try:
-            msg = connection_data['client_socket'].recv(BUFSIZ).decode("utf8")
-            print(f"received message: \n{msg}")
-            if msg.startswith(PRIVATE_MSG_PREFIX):
-                msg = msg.replace(PRIVATE_MSG_PREFIX, "")
-                private_msg_box_str.set(msg)
-            elif msg.startswith(PUBLIC_MSG_PREFIX):
-                msg = msg.replace(PUBLIC_MSG_PREFIX, "")
-                public_msg_box_str.set(msg)
-            elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
-                msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
-                player_list_box_str.set(msg)
-            elif msg.startswith(SET_PLAYER):
-                player_button.configure(text="Zuschauen", command=set_spectator)
-            elif msg.startswith(SET_SPECTATOR):
-                player_button.configure(text="Mitspielen", command=set_player)
-            elif msg.startswith(QUIT):
-                break
-            else:
-                print(f"message neither public nor private: {msg}")
-            # public or private message?
-            #msg_list.insert(tkinter.END, msg)
+            rcvd = connection_data['client_socket'].recv(BUFSIZ).decode("utf8")
+            print(f"received message: \n{rcvd}")
+            msgs = rcvd.split("@")
+            for msg in msgs:
+                if msg.startswith(PRIVATE_MSG_PREFIX):
+                    msg = msg.replace(PRIVATE_MSG_PREFIX, "")
+                    private_msg_box_str.set(msg)
+                elif msg.startswith(PUBLIC_MSG_PREFIX):
+                    msg = msg.replace(PUBLIC_MSG_PREFIX, "")
+                    public_msg_box_str.set(msg)
+                elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
+                    msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
+                    player_list_box_str.set(msg)
+                elif msg.startswith(SET_PLAYER):
+                    player_button.configure(text="Zuschauen", command=set_spectator)
+                elif msg.startswith(SET_SPECTATOR):
+                    player_button.configure(text="Mitspielen", command=set_player)
+                elif msg.startswith(QUIT):
+                    return
+                else:
+                    print(f"message neither public nor private: {msg}")
+                # public or private message?
+                #msg_list.insert(tkinter.END, msg)
         except OSError:  # Possibly client has left the chat.
-            break
+            return
 
 
 

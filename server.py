@@ -8,13 +8,15 @@ from typing import List
 ############<GAME LOGIC>##################
 
 ###CONSTANTS###
+# @ used as separator-prefix (in case buffer fills up with more than 1 message)
+MESSAGE_SEPARATOR = "@"
 GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
-QUIT = "{quit}"
+QUIT = "QUIT"
 
 ###############
 class GameState:
@@ -31,7 +33,7 @@ class GameState:
         :return:
         """
         self.player_queue = self.player_queue[1:]+[self.player_queue[0]]
-        self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
+        self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
         self.broadcast_player_list()
 
 
@@ -42,7 +44,7 @@ class GameState:
         broadcast(prefix=PLAYER_LIST_MSG_PREFIX, msg=output)
         print(f"broadcasting player list update: \n {output}")
         if self.player_queue:
-            self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
+            self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
 
     def update(self, client, message: str):
         """
@@ -74,7 +76,7 @@ class GameState:
         elif message.startswith("ROLL_DICE"):
             if self.player_queue[0] == client:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
-                self.player_queue[0].send(bytes(f"{PRIVATE_MSG_PREFIX}Deine Würfel: {self.dies}", "utf8"))
+                self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: {self.dies}", "utf8"))
                 self.end_turn()
         elif message.startswith("SET_NAME"):
             self.names[client] = message.remove("SET_NAME")
@@ -83,14 +85,14 @@ class GameState:
                 self.spectators.remove(client)
             if client not in self.player_queue:
                 self.player_queue.append(client)
-            client.send(bytes(f"{SET_PLAYER}", "utf8"))
+            client.send(bytes(f"{MESSAGE_SEPARATOR}{SET_PLAYER}", "utf8"))
             self.broadcast_player_list()
         elif message.startswith("SET_SPECTATOR"):
             if client in self.player_queue:  # and self.player_queue[0] != client (do your turn first yo)
                 self.player_queue.remove(client)
             if client not in self.spectators:
                 self.spectators.append(client)
-            client.send(bytes(f"{SET_SPECTATOR}", "utf8"))
+            client.send(bytes(f"{MESSAGE_SEPARATOR}{SET_SPECTATOR}", "utf8"))
             self.broadcast_player_list()
         else:
             print(f"Unexpected message: {message}. Aborting.")
@@ -116,7 +118,7 @@ def accept_incoming_connections():
     while True:
         client, client_address = SERVER.accept()
         print("%s:%s has connected." % client_address)
-        client.send(bytes(f"{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxchen? \n ..bitte Name eingeben =)", "utf8"))
+        client.send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxchen? \n ..bitte Name eingeben =)", "utf8"))
         addresses[client] = client_address
         clients.append(client)
         Thread(target=handle_client, args=(client,)).start()
@@ -126,7 +128,7 @@ def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
     name = client.recv(BUFSIZ).decode("utf8")
-    welcome = f'{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
+    welcome = f'{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
     gameState.names[client] = name
     client.send(bytes(welcome, "utf8"))
 
@@ -139,7 +141,7 @@ def handle_client(client):  # Takes client socket as argument.
             gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
         else:
             print(f"client{client} sent unexpected message: {msg}; closing connection")
-            client.send(bytes(QUIT, "utf8"))
+            client.send(bytes(f"{MESSAGE_SEPARATOR}{QUIT}", "utf8"))
             client.close()
             clients.remove(client)
             del gameState.names[client]
@@ -152,7 +154,7 @@ def broadcast(msg, prefix=PUBLIC_MSG_PREFIX):  # prefix is for name identificati
     """Broadcasts a message to all the clients."""
     # TODO: have byte encoding and decoding happen in exactly 1 place respectively
     for sock in clients:
-        sock.send(bytes(prefix+msg, "utf8"))
+        sock.send(bytes(f"{MESSAGE_SEPARATOR}{prefix+msg}", "utf8"))
 
 
 
