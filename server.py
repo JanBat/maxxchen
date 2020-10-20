@@ -76,7 +76,7 @@ class GameState:
         elif message.startswith("ROLL_DICE"):
             if self.player_queue[0] == client:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
-                self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: {self.dies}", "utf8"))
+                self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: ({self.dies[0]}//{self.dies[1]})", "utf8"))
                 self.end_turn()
         elif message.startswith("SET_NAME"):
             self.names[client] = message.remove("SET_NAME")
