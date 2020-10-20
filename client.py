@@ -74,7 +74,8 @@ def set_spectator(event=None):  # event is passed by binders.
 
 def on_closing(event=None):
     """This function is to be called when the window is closed."""
-    my_msg.set("{quit}")
+    connection_data['client_socket'].send(bytes("{quit}", "utf8"))
+    top.quit()
 
 top = tkinter.Tk()
 top.title("Maxxchen")
