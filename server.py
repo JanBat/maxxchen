@@ -9,6 +9,8 @@ from typing import List
 
 ###CONSTANTS###
 # @ used as separator-prefix (in case buffer fills up with more than 1 message)
+# to contain both client and server in their entirety in 1 script each,
+# there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
 GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
@@ -33,7 +35,6 @@ class GameState:
         :return:
         """
         self.player_queue = self.player_queue[1:]+[self.player_queue[0]]
-        self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
         self.broadcast_player_list()
 
 
@@ -58,7 +59,7 @@ class GameState:
                 PASS_DICE
                 REVEAL_DICE
                 ROLL_DICE
-                SET_NAMEawesomeName123
+                SET_NAMEawesomeName123 (not in use, name is set by first received message)
                 SET_PLAYER
                 SET_SPECTATOR
 
@@ -79,8 +80,6 @@ class GameState:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
                 self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: ({self.dies[0]}//{self.dies[1]})", "utf8"))
                 self.end_turn()
-        elif message.startswith("SET_NAME"):
-            self.names[client] = message.remove("SET_NAME")
         elif message.startswith("SET_PLAYER"):
             if client in self.spectators:
                 self.spectators.remove(client)
@@ -105,6 +104,7 @@ class GameState:
 
         :return:
         """
+        raise NotImplementedError
 
 
 gameState = GameState()  # because global variables are fun
@@ -141,13 +141,18 @@ def handle_client(client):  # Takes client socket as argument.
             print("message started with gamestate update prefix!")
             gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
         else:
+            #TODO: clean up this block and handle quitting a little more explicitely
             print(f"client{client} sent unexpected message: {msg}; closing connection")
             client.send(bytes(f"{MESSAGE_SEPARATOR}{QUIT}", "utf8"))
             client.close()
             clients.remove(client)
+            if client in gameState.player_queue:
+                gameState.player_queue.remove(client)
+            if client in gameState.spectators:
+                gameState.spectators.remove(client)
             del gameState.names[client]
             del addresses[client]
-            broadcast(bytes("%s has left the chat." % name, "utf8"))
+            gameState.broadcast_player_list()
             break
 
 

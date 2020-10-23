@@ -6,6 +6,9 @@ import tkinter
 
 
 ############<GAME LOGIC>##################
+# @ used as separator-prefix (in case buffer fills up with more than 1 message)
+# to contain both client and server in their entirety in 1 script each,
+# there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
 GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
@@ -43,35 +46,30 @@ def receive():
                     return
                 else:
                     print(f"message neither public nor private: {msg}")
-                # public or private message?
-                #msg_list.insert(tkinter.END, msg)
-        except OSError:  # Possibly client has left the chat.
+        except OSError as e:  # Possibly client has left the chat.
+            print(f"OSError: {e}")
             return
 
 
-
-'''
-def set_name(event=None):  # event is passed by binders.
-    """Handles sending of messages."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(f"{GAMESTATE_UPDATE_PREFIX}SET_NAME{msg}", "utf8"))
-'''
 def roll_dies(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
+
 
 def pass_dies(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
 
+
 def reveal_dies(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
 
+
 def set_player(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_PLAYER}"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
+
 
 def set_spectator(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_SPECTATOR}"
@@ -84,13 +82,15 @@ def on_closing(event=None):
         connection_data['client_socket'].send(bytes(QUIT, "utf8"))
     top.quit()
 
+
 def set_host(event=None):
     connection_data["HOST"] = my_msg.get()
     my_msg.set("63001")
-    entry_field.bind("<Return>", set_PORT)
+    entry_field.bind("<Return>", set_port)
     private_msg_box_str.set("Bitte Port eingeben!")
 
-def set_PORT(event=None):
+
+def set_port(event=None):
     connection_data["PORT"] = my_msg.get()
     my_msg.set("TestName1")
     entry_field.bind("<Return>", set_name)
@@ -123,7 +123,7 @@ top.title("Maxxchen")
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()  # For the messages to be sent.
-my_msg.set("--blank default message--")
+my_msg.set("")
 
 public_msg_box_str = tkinter.StringVar()
 public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
@@ -161,7 +161,7 @@ player_button.pack(side=tkinter.LEFT)
 top.protocol("WM_DELETE_WINDOW", on_closing)
 
 #----Now comes the sockets part----
-my_msg.set("")
+
 
 connection_data = {
     "HOST": "",
