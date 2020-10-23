@@ -72,13 +72,13 @@ class GameState:
             if self.player_queue[0] == client:
                 self.end_turn()
                 self.player_queue[-1].send(
-                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel an {self.names[self.player_queue[0]]} weitergegeben!)",
+                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel an {self.names[self.player_queue[0]]} weitergegeben!",
                           "utf8"))
         elif message.startswith("REVEAL_DICE"):
             if self.player_queue[0] == client:
                 broadcast(f"{self.names[client]} deckt auf: ({self.dies[0]}/{self.dies[1]})")
                 self.player_queue[0].send(
-                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel von {self.names[self.player_queue[-1]]} aufgedeckt!)",
+                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel von {self.names[self.player_queue[-1]]} aufgedeckt!",
                           "utf8"))
                 self.end_turn()
         elif message.startswith("ROLL_DICE"):
