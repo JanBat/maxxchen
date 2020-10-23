@@ -71,14 +71,20 @@ class GameState:
         if message.startswith("PASS_DICE"):
             if self.player_queue[0] == client:
                 self.end_turn()
+                self.player_queue[-1].send(
+                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel an {self.names[self.player_queue[0]]} weitergegeben!)",
+                          "utf8"))
         elif message.startswith("REVEAL_DICE"):
             if self.player_queue[0] == client:
-                broadcast(f"{self.names[client]} deckt auf: {self.dies}")
+                broadcast(f"{self.names[client]} deckt auf: ({self.dies[0]}/{self.dies[1]})")
+                self.player_queue[0].send(
+                    bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel von {self.names[self.player_queue[-1]]} aufgedeckt!)",
+                          "utf8"))
                 self.end_turn()
         elif message.startswith("ROLL_DICE"):
             if self.player_queue[0] == client:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
-                self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: ({self.dies[0]}//{self.dies[1]})", "utf8"))
+                self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: ({self.dies[0]}/{self.dies[1]})", "utf8"))
                 self.end_turn()
         elif message.startswith("SET_PLAYER"):
             if client in self.spectators:
@@ -132,6 +138,7 @@ def handle_client(client):  # Takes client socket as argument.
     welcome = f'{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
     gameState.names[client] = name
     client.send(bytes(welcome, "utf8"))
+    gameState.broadcast_player_list()
 
     while True:
         msg = client.recv(BUFSIZ)
