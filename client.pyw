@@ -122,7 +122,8 @@ top = tkinter.Tk()
 top.title("Maxxchen")
 
 messages_frame = tkinter.Frame(top)
-my_msg = tkinter.StringVar()  # For the messages to be sent.
+
+my_msg = tkinter.StringVar()  # input field
 my_msg.set("")
 
 public_msg_box_str = tkinter.StringVar()
@@ -130,31 +131,48 @@ public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str
 public_msg_box_str.set("Willkommen bei Maxxchen!")
 public_msg_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
 
-private_msg_box_str = tkinter.StringVar()
-private_msg_box = tkinter.Message(messages_frame, textvariable=private_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
-private_msg_box_str.set("Bitte Host-IP eingeben!")
-private_msg_box.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
-
 player_list_box_str = tkinter.StringVar()
 player_list_box = tkinter.Message(messages_frame, textvariable=player_list_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
 player_list_box_str.set("...")
-player_list_box.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
+player_list_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
+
+private_msg_box_str = tkinter.StringVar()
+private_msg_box = tkinter.Message(messages_frame, textvariable=private_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
+private_msg_box_str.set("Bitte Host-IP eingeben!")
+private_msg_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
+
+entry_field = tkinter.Entry(messages_frame, textvariable=my_msg)
+entry_field.pack(side=tkinter.TOP)
 
 messages_frame.pack()
 
-entry_field = tkinter.Entry(top, textvariable=my_msg)
-#entry_field.bind("<Return>", set_host)
-entry_field.pack()
-roll_button = tkinter.Button(top, text="Würfeln", command=roll_dies)
+
+game_move_frame = tkinter.Frame(top)
+
+roll_button = tkinter.Button(game_move_frame, text="Würfeln", command=roll_dies)
 roll_button.pack(side=tkinter.LEFT)
-pass_button = tkinter.Button(top, text="Verdeckt weitergeben", command=pass_dies)
+pass_button = tkinter.Button(game_move_frame, text="Verdeckt weitergeben", command=pass_dies)
 pass_button.pack(side=tkinter.LEFT)
-reveal_button = tkinter.Button(top, text="Aufdecken", command=reveal_dies)
+reveal_button = tkinter.Button(game_move_frame, text="Aufdecken", command=reveal_dies)
 reveal_button.pack(side=tkinter.LEFT)
-player_button = tkinter.Button(top, text="Mitspielen", command=set_player)
+player_button = tkinter.Button(game_move_frame, text="Mitspielen", command=set_player)
 player_button.pack(side=tkinter.LEFT)
-# name_button = tkinter.Button(top, text="Set Name", command=set_name)
-# name_button.pack()
+
+game_move_frame.pack()
+
+vote_frame = tkinter.Frame(top)
+
+vote_win_button = tkinter.Button(vote_frame, text="(...) hat gewonnen", command=reveal_dies)
+vote_win_button.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
+#vote_win_button.grid_forget()
+
+vote_loss_button = tkinter.Button(vote_frame, text="(...) hat verloren", command=reveal_dies)
+vote_loss_button.pack(side=tkinter.BOTTOM)
+#vote_loss_button.grid_forget()
+
+vote_frame.pack()
+
+#vote_frame.forget()
 
 
 
