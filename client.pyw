@@ -119,24 +119,27 @@ def connect():
     receive_thread.start()
 
 top = tkinter.Tk()
-top.title("Maxxchen")
+top.title("Mäxxchen")
+top.geometry('600x150')
+top.configure(bg='gainsboro')
+top.resizable(0, 0) #Kein resize für Fenster
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()  # For the messages to be sent.
 my_msg.set("")
 
 public_msg_box_str = tkinter.StringVar()
-public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
-public_msg_box_str.set("Willkommen bei Maxxchen!")
+public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str, relief=tkinter.RAISED, width=500, bg='whitesmoke')  # non-scrolly gamestate display (?)
+public_msg_box_str.set("Willkommen bei Mäxxchen!")
 public_msg_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
 
 private_msg_box_str = tkinter.StringVar()
-private_msg_box = tkinter.Message(messages_frame, textvariable=private_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
+private_msg_box = tkinter.Message(messages_frame, textvariable=private_msg_box_str, relief=tkinter.RAISED, width=500, bg='ghostwhite')  # non-scrolly gamestate display (?)
 private_msg_box_str.set("Bitte Host-IP eingeben!")
 private_msg_box.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
 
 player_list_box_str = tkinter.StringVar()
-player_list_box = tkinter.Message(messages_frame, textvariable=player_list_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
+player_list_box = tkinter.Message(messages_frame, textvariable=player_list_box_str, relief=tkinter.RAISED, width=500, bg='whitesmoke')  # non-scrolly gamestate display (?)
 player_list_box_str.set("...")
 player_list_box.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
 
@@ -145,14 +148,14 @@ messages_frame.pack()
 entry_field = tkinter.Entry(top, textvariable=my_msg)
 #entry_field.bind("<Return>", set_host)
 entry_field.pack()
-roll_button = tkinter.Button(top, text="Würfeln", command=roll_dies)
+roll_button = tkinter.Button(top, text="Würfeln", command=roll_dies, height=3, width=20, bg='dodgerblue')
 roll_button.pack(side=tkinter.LEFT)
-pass_button = tkinter.Button(top, text="Verdeckt weitergeben", command=pass_dies)
+pass_button = tkinter.Button(top, text="Verdeckt weitergeben", command=pass_dies, height=3, width=20, bg='gold')
 pass_button.pack(side=tkinter.LEFT)
-reveal_button = tkinter.Button(top, text="Aufdecken", command=reveal_dies)
-reveal_button.pack(side=tkinter.LEFT)
-player_button = tkinter.Button(top, text="Mitspielen", command=set_player)
-player_button.pack(side=tkinter.LEFT)
+player_button = tkinter.Button(top, text="Mitspielen", command=set_player, height=3, width=20, bg='lime')
+player_button.pack(side=tkinter.RIGHT)
+reveal_button = tkinter.Button(top, text="Aufdecken", command=reveal_dies, height=3, width=20, bg='tomato')
+reveal_button.pack(side=tkinter.RIGHT)
 # name_button = tkinter.Button(top, text="Set Name", command=set_name)
 # name_button.pack()
 
