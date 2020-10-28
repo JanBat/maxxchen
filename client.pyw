@@ -20,6 +20,7 @@ QUIT = "QUIT"
 
 ############</GAME LOGIC>#################
 BUFSIZ = 1024
+DEFAULT_ADDRESS = "192.168.1.10"
 
 def receive():
     """Handles receiving of messages."""
@@ -51,17 +52,17 @@ def receive():
             return
 
 
-def roll_dies(event=None):  # event is passed by binders.
+def roll_dice(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
 
 
-def pass_dies(event=None):  # event is passed by binders.
+def pass_dice(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
 
 
-def reveal_dies(event=None):  # event is passed by binders.
+def reveal_dice(event=None):  # event is passed by binders.
     msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
     connection_data['client_socket'].send(bytes(msg, "utf8"))
 
@@ -118,81 +119,84 @@ def connect():
     receive_thread = Thread(target=receive)
     receive_thread.start()
 
-top = tkinter.Tk()
-top.title("Maxxchen")
 
-messages_frame = tkinter.Frame(top)
+class App:  # essentially a "static" class. open to more elegant solutions :D
 
-my_msg = tkinter.StringVar()  # input field
-my_msg.set("")
+    class AppSection:
+        def __init__(self, top, orientation=tkinter.LEFT, fill=tkinter.NONE):
+            self.components = []
+            self.frame: tkinter.Frame = tkinter.Frame(top)
+            self.orientation = orientation
+            self.fill = fill
 
-public_msg_box_str = tkinter.StringVar()
-public_msg_box = tkinter.Message(messages_frame, textvariable=public_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
-public_msg_box_str.set("Willkommen bei Maxxchen!")
-public_msg_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
+        def _add_component(self, component):
+            self.components.append(component)
+            component.pack(side=self.orientation, fill=self.fill)
+            self.frame.pack()  # not sure if correct place for this (TODO: find out)
 
-player_list_box_str = tkinter.StringVar()
-player_list_box = tkinter.Message(messages_frame, textvariable=player_list_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
-player_list_box_str.set("...")
-player_list_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
+        def add_button(self, text: str, command):
+            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command)
+            self._add_component(new_button)
+            return new_button
 
-private_msg_box_str = tkinter.StringVar()
-private_msg_box = tkinter.Message(messages_frame, textvariable=private_msg_box_str, relief=tkinter.RAISED, width=500)  # non-scrolly gamestate display (?)
-private_msg_box_str.set("Bitte Host-IP eingeben!")
-private_msg_box.pack(side=tkinter.TOP, fill=tkinter.BOTH)
+        def add_entry(self, textvariable: tkinter.StringVar):
+            new_entry: tkinter.Entry = tkinter.Entry(self.frame, textvariable=textvariable)
+            self._add_component(new_entry)
+            return new_entry
 
-entry_field = tkinter.Entry(messages_frame, textvariable=my_msg)
-entry_field.pack(side=tkinter.TOP)
+        def add_message(self, textvariable: tkinter.StringVar, relief=tkinter.RAISED, width=500):
+            msg = tkinter.Message(self.frame, textvariable=textvariable, relief=relief, width=width)
+            self._add_component(msg)
+            return msg
 
-messages_frame.pack()
+        def activate(self):
+            for component in self.components:
+                component.pack()  # grid_forget ?
 
+        def deactivate(self):
+            for component in self.components:
+                component.forget()  # grid_forget ?
 
-game_move_frame = tkinter.Frame(top)
+    def __init__(self):
 
-roll_button = tkinter.Button(game_move_frame, text="Würfeln", command=roll_dies)
-roll_button.pack(side=tkinter.LEFT)
-pass_button = tkinter.Button(game_move_frame, text="Verdeckt weitergeben", command=pass_dies)
-pass_button.pack(side=tkinter.LEFT)
-reveal_button = tkinter.Button(game_move_frame, text="Aufdecken", command=reveal_dies)
-reveal_button.pack(side=tkinter.LEFT)
-player_button = tkinter.Button(game_move_frame, text="Mitspielen", command=set_player)
-player_button.pack(side=tkinter.LEFT)
+        self.connection_data ={
+            "HOST": "",
+            "PORT": "",
+            "client_socket": None
+        }
 
-game_move_frame.pack()
+        top = tkinter.Tk()
+        top.title("Mäxxchen")
+        top.protocol("WM_DELETE_WINDOW", on_closing)
 
-vote_frame = tkinter.Frame(top)
+        # Game Moves:
+        self.game_move_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.LEFT)
+        self.game_move_section.add_button(text="Würfeln", command=roll_dice)
+        self.game_move_section.add_button(text="Verdeckt weitergeben", command=pass_dice)
+        self.game_move_section.add_button(text="Aufdecken", command=reveal_dice)
+        self.game_move_section.add_button(text="Mitspielen", command=set_player)
 
-vote_win_button = tkinter.Button(vote_frame, text="(...) hat gewonnen", command=reveal_dies)
-vote_win_button.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH)
-#vote_win_button.grid_forget()
+        # Message Box:
+        self.msg_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.TOP, fill=tkinter.BOTH)
+        self.public_msg_box_str = tkinter.StringVar()
+        self.public_msg_box_str.set("Willkommen bei Maxxchen!")
+        self.player_list_box_str = tkinter.StringVar()
+        self.player_list_box_str.set("...")
+        self.private_msg_box_str = tkinter.StringVar()
+        self.private_msg_box_str.set("Bitte Host-IP eingeben!")
+        self.entry_str = tkinter.StringVar()
+        self.entry_str.set(DEFAULT_ADDRESS)
+        self.msg_section.add_message(textvariable=self.public_msg_box_str)
+        self.msg_section.add_message(textvariable=self.player_list_box_str)
+        self.msg_section.add_message(textvariable=self.private_msg_box_str)
+        self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
+        self.entry_field.bind("<Return>", set_host)
 
-vote_loss_button = tkinter.Button(vote_frame, text="(...) hat verloren", command=reveal_dies)
-vote_loss_button.pack(side=tkinter.BOTTOM)
-#vote_loss_button.grid_forget()
-
-vote_frame.pack()
-
-#vote_frame.forget()
-
-
-
-top.protocol("WM_DELETE_WINDOW", on_closing)
-
-#----Now comes the sockets part----
-
-
-connection_data = {
-    "HOST": "",
-    "PORT": "",
-    "client_socket": None
-}
-
-
-
-
-entry_field.bind("<Return>", set_host)
-my_msg.set("192.168.1.10")
-#PORT = input('Enter port: ')
+    def start(self):
+        tkinter.mainloop()  # Starts GUI execution.
 
 
-tkinter.mainloop()  # Starts GUI execution.
+
+if __name__ == "__main__":
+    app = App()
+    app.start()
