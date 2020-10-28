@@ -97,28 +97,14 @@ def set_port(event=None):
     entry_field.bind("<Return>", set_name)
     connect()
 
-def set_name(event=None):  # event is passed by binders.
-    """Sends the initial "name" message."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-    entry_field.destroy()
-
-def connect():
-    if not connection_data["PORT"]:
-        connection_data["PORT"] = 63001
-    else:
-        connection_data["PORT"] = int(connection_data["PORT"])
 
 
-    ADDR = (connection_data["HOST"], connection_data["PORT"])
+###above this point: fix/integrate!
+###below this point: refactored
 
-    connection_data['client_socket'] = socket(AF_INET, SOCK_STREAM)
-    connection_data['client_socket'].connect(ADDR)
-
-    receive_thread = Thread(target=receive)
-    receive_thread.start()
-
+class Connection:
+    PORT = ""
+    HOST = ""
 
 class App:  
 
@@ -159,11 +145,7 @@ class App:
 
     def __init__(self):
 
-        self.connection_data ={
-            "HOST": "",
-            "PORT": "",
-            "client_socket": None
-        }
+        self.client_socket = None
 
         top = tkinter.Tk()
         top.title("Mäxxchen")
@@ -193,6 +175,22 @@ class App:
         self.msg_section.add_message(textvariable=self.private_msg_box_str)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
         self.entry_field.bind("<Return>", set_host)
+
+    def connect(self):
+
+        ADDR = (Connection.HOST, Connection.PORT)
+
+        self.client_socket = socket(AF_INET, SOCK_STREAM)
+        self.client_socket.connect(ADDR)
+
+        receive_thread = Thread(target=receive)
+        receive_thread.start()
+
+    def set_name(self, event=None):  # event is passed by binders. (???)
+        """Sends the initial "name" message."""
+        name = self.entry_str.get()
+        self.client_socket.send(bytes(name, "utf8"))  # maybe it would be neater to have a prefix for this as well?
+        self.entry_field.destroy()
 
 
 if __name__ == "__main__":
