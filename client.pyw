@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script for Tkinter GUI chat client."""
+"""Modified Script for Tkinter GUI chat client."""
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
@@ -32,17 +32,17 @@ def receive():
             for msg in msgs:
                 if msg.startswith(PRIVATE_MSG_PREFIX):
                     msg = msg.replace(PRIVATE_MSG_PREFIX, "")
-                    private_msg_box_str.set(msg)
+                    App.private_msg_box_str.set(msg)
                 elif msg.startswith(PUBLIC_MSG_PREFIX):
                     msg = msg.replace(PUBLIC_MSG_PREFIX, "")
-                    public_msg_box_str.set(msg)
+                    App.public_msg_box_str.set(msg)
                 elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
                     msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
-                    player_list_box_str.set(msg)
+                    App.player_list_box_str.set(msg)
                 elif msg.startswith(SET_PLAYER):
-                    player_button.configure(text="Zuschauen", command=set_spectator)
+                    App.game_move_section.components[3].configure(text="Zuschauen", command=set_spectator)
                 elif msg.startswith(SET_SPECTATOR):
-                    player_button.configure(text="Mitspielen", command=set_player)
+                    App.game_move_section.components[3].configure(text="Mitspielen", command=set_player)
                 elif msg.startswith(QUIT):
                     return
                 else:
@@ -120,7 +120,7 @@ def connect():
     receive_thread.start()
 
 
-class App:  # essentially a "static" class. open to more elegant solutions :D
+class App:  
 
     class AppSection:
         def __init__(self, top, orientation=tkinter.LEFT, fill=tkinter.NONE):
@@ -169,6 +169,16 @@ class App:  # essentially a "static" class. open to more elegant solutions :D
         top.title("Mäxxchen")
         top.protocol("WM_DELETE_WINDOW", on_closing)
 
+        # various strings used by the application:
+        self.public_msg_box_str = tkinter.StringVar()
+        self.public_msg_box_str.set("Willkommen bei Maxxchen!")
+        self.player_list_box_str = tkinter.StringVar()
+        self.player_list_box_str.set("...")
+        self.private_msg_box_str = tkinter.StringVar()
+        self.private_msg_box_str.set("Bitte Host-IP eingeben!")
+        self.entry_str = tkinter.StringVar()
+        self.entry_str.set(DEFAULT_ADDRESS)
+
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.LEFT)
         self.game_move_section.add_button(text="Würfeln", command=roll_dice)
@@ -178,25 +188,13 @@ class App:  # essentially a "static" class. open to more elegant solutions :D
 
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.TOP, fill=tkinter.BOTH)
-        self.public_msg_box_str = tkinter.StringVar()
-        self.public_msg_box_str.set("Willkommen bei Maxxchen!")
-        self.player_list_box_str = tkinter.StringVar()
-        self.player_list_box_str.set("...")
-        self.private_msg_box_str = tkinter.StringVar()
-        self.private_msg_box_str.set("Bitte Host-IP eingeben!")
-        self.entry_str = tkinter.StringVar()
-        self.entry_str.set(DEFAULT_ADDRESS)
         self.msg_section.add_message(textvariable=self.public_msg_box_str)
         self.msg_section.add_message(textvariable=self.player_list_box_str)
         self.msg_section.add_message(textvariable=self.private_msg_box_str)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
         self.entry_field.bind("<Return>", set_host)
 
-    def start(self):
-        tkinter.mainloop()  # Starts GUI execution.
-
-
 
 if __name__ == "__main__":
     app = App()
-    app.start()
+    tkinter.mainloop()
