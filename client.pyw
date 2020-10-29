@@ -24,76 +24,9 @@ BUFSIZ: int = 1024
 DEFAULT_ADDRESS: str = "192.168.1.10"
 DEFAULT_PORT: int = 63001
 
-def receive():
-    """Handles receiving of messages."""
-    while True:
-        try:
-            rcvd = connection_data['client_socket'].recv(BUFSIZ).decode("utf8")
-            print(f"received message: \n{rcvd}")
-            msgs = rcvd.split("@")
-            for msg in msgs:
-                if msg.startswith(PRIVATE_MSG_PREFIX):
-                    msg = msg.replace(PRIVATE_MSG_PREFIX, "")
-                    App.private_msg_box_str.set(msg)
-                elif msg.startswith(PUBLIC_MSG_PREFIX):
-                    msg = msg.replace(PUBLIC_MSG_PREFIX, "")
-                    App.public_msg_box_str.set(msg)
-                elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
-                    msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
-                    App.player_list_box_str.set(msg)
-                elif msg.startswith(SET_PLAYER):
-                    App.game_move_section.components[3].configure(text="Zuschauen", command=set_spectator)
-                elif msg.startswith(SET_SPECTATOR):
-                    App.game_move_section.components[3].configure(text="Mitspielen", command=set_player)
-                elif msg.startswith(QUIT):
-                    return
-                else:
-                    print(f"message neither public nor private: {msg}")
-        except OSError as e:  # Possibly client has left the chat.
-            print(f"OSError: {e}")
-            return
-
-
-def roll_dice(event=None):  # event is passed by binders.
-    msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-
-
-def pass_dice(event=None):  # event is passed by binders.
-    msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-
-
-def reveal_dice(event=None):  # event is passed by binders.
-    msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-
-
-def set_player(event=None):  # event is passed by binders.
-    msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_PLAYER}"
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-
-
-def set_spectator(event=None):  # event is passed by binders.
-    msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_SPECTATOR}"
-    connection_data['client_socket'].send(bytes(msg, "utf8"))
-
-
-def on_closing(event=None):
-    """This function is to be called when the window is closed."""
-    if connection_data['client_socket']:
-        connection_data['client_socket'].send(bytes(QUIT, "utf8"))
-    top.quit()
-
-
-
-
-
-
-###above this point: fix/integrate!
-###below this point: refactored
 
 class Connection:
+    """handles collection and storage of connection data (port+host). does not actually connect to anything"""
     PORT = ""
     HOST = ""
 
@@ -102,7 +35,7 @@ class Connection:
         # set up port and host in separate miniapp
 
         connection_app = tkinter.Tk()
-
+        connection_app.protocol("WM_DELETE_WINDOW", lambda: connection_app.quit())
         msg_string: tkinter.StringVar = tkinter.StringVar()
         msg_string.set("Bitte Adresse eingeben!")
         msg = tkinter.Message(connection_app, textvariable=msg_string, relief=tkinter.RAISED, width=500)
@@ -135,7 +68,7 @@ class App:
             self.orientation = orientation
             self.fill = fill
 
-        # functions for managing visible componentsn (buttons, text fields)
+        # functions for managing abstract visible components (buttons, text fields)
 
         def _add_component(self, component):
             self.components.append(component)
@@ -159,19 +92,98 @@ class App:
 
         def activate(self):
             for component in self.components:
-                component.pack()  # grid_forget ?
+                component.pack()  # there's possibly a more elegant way to do this
 
         def deactivate(self):
             for component in self.components:
                 component.forget()  # grid_forget ?
 
+    # App management:
+    def connect(self):
+        if not Connection.HOST or not Connection.PORT:
+            self.top.quit()
+
+        ADDR = (Connection.HOST, Connection.PORT)
+
+        self.client_socket = socket(AF_INET, SOCK_STREAM)
+        self.client_socket.connect(ADDR)
+
+        receive_thread = Thread(target=self.receive)
+        receive_thread.start()
+
+    def on_closing(self, event=None):
+        """This function is to be called when the window is closed."""
+        if self.client_socket:
+            self.client_socket.send(bytes(QUIT, "utf8"))
+        self.top.quit()
+
+    def receive(self):
+        """Handles receiving of messages."""
+        while True:
+            try:
+                rcvd = self.client_socket.recv(BUFSIZ).decode("utf8")
+                print(f"received message: \n{rcvd}")
+                msgs = rcvd.split("@")
+                for msg in msgs:
+                    if msg.startswith(PRIVATE_MSG_PREFIX):
+                        msg = msg.replace(PRIVATE_MSG_PREFIX, "")
+                        self.private_msg_box_str.set(msg)
+                    elif msg.startswith(PUBLIC_MSG_PREFIX):
+                        msg = msg.replace(PUBLIC_MSG_PREFIX, "")
+                        self.public_msg_box_str.set(msg)
+                    elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
+                        msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
+                        self.player_list_box_str.set(msg)
+                    elif msg.startswith(SET_PLAYER):
+                        self.game_move_section.components[3].configure(text="Zuschauen", command=self.set_spectator)
+                    elif msg.startswith(SET_SPECTATOR):
+                        self.game_move_section.components[3].configure(text="Mitspielen", command=self.set_player)
+                    elif msg.startswith(QUIT):
+                        return
+                    else:
+                        print(f"message neither public nor private: {msg}")
+            except OSError as e:  # Possibly client has left the chat.
+                print(f"OSError: {e}")
+                return
+
+    def send(self, msg):
+        
+        self.client_socket.send(bytes(msg, "utf8"))
+        
+    def set_name(self, event=None):  # event is passed by binders. (???)
+        """Sends the initial "name" message."""
+        name = self.entry_str.get()
+        self.send(name)  # maybe it would be neater to have a prefix for this as well?
+        self.entry_field.destroy()
+        
+    # Game interactions:
+    def roll_dice(self, event=None):  # event is passed by binders.
+        msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
+        self.send(msg)
+
+    def pass_dice(self, event=None):  # event is passed by binders.
+        msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
+        self.send(msg)
+
+    def reveal_dice(self, event=None):  # event is passed by binders.
+        msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
+        self.send(msg)
+
+    def set_player(self, event=None):  # event is passed by binders.
+        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_PLAYER}"
+        self.send(msg)
+
+    def set_spectator(self, event=None):  # event is passed by binders.
+        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_SPECTATOR}"
+        self.send(msg)
+        
     def __init__(self):
 
         self.client_socket = None
 
-        top = tkinter.Tk()
-        top.title("Mäxxchen")
-        top.protocol("WM_DELETE_WINDOW", on_closing)
+        self.top = tkinter.Tk()
+        self.top.title("Mäxxchen")
+        self.top.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # various strings used by the application:
         self.public_msg_box_str = tkinter.StringVar()
@@ -184,38 +196,22 @@ class App:
         self.entry_str.set(DEFAULT_ADDRESS)
 
         # Message Box:
-        self.msg_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.TOP, fill=tkinter.BOTH)
+        self.msg_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP, fill=tkinter.BOTH)
         self.msg_section.add_message(textvariable=self.public_msg_box_str)
         self.msg_section.add_message(textvariable=self.player_list_box_str)
         self.msg_section.add_message(textvariable=self.private_msg_box_str)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
-        self.entry_field.bind("<Return>", set_host)
+        self.entry_field.bind("<Return>", App.set_name)
 
         # Game Moves:
-        self.game_move_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.LEFT)
-        self.game_move_section.add_button(text="Würfeln", command=roll_dice)
-        self.game_move_section.add_button(text="Verdeckt weitergeben", command=pass_dice)
-        self.game_move_section.add_button(text="Aufdecken", command=reveal_dice)
-        self.game_move_section.add_button(text="Mitspielen", command=set_player)
+        self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
+        self.game_move_section.add_button(text="Würfeln", command=self.roll_dice)
+        self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice)
+        self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice)
+        self.game_move_section.add_button(text="Mitspielen", command=self.set_player)
 
         # Execute app and connect to server
         self.connect()
-
-    def connect(self):
-
-        ADDR = (Connection.HOST, Connection.PORT)
-
-        self.client_socket = socket(AF_INET, SOCK_STREAM)
-        self.client_socket.connect(ADDR)
-
-        receive_thread = Thread(target=receive)
-        receive_thread.start()
-
-    def set_name(self, event=None):  # event is passed by binders. (???)
-        """Sends the initial "name" message."""
-        name = self.entry_str.get()
-        self.client_socket.send(bytes(name, "utf8"))  # maybe it would be neater to have a prefix for this as well?
-        self.entry_field.destroy()
 
 
 if __name__ == "__main__":
