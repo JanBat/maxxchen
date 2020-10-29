@@ -6,9 +6,9 @@ import json
 import random
 
 
-############<GAME LOGIC>##################
+# ###########<GAME LOGIC>################# #
 
-###CONSTANTS###
+# ##CONSTANTS## #
 # @ used as separator-prefix (in case buffer fills up with more than 1 message)
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
@@ -21,14 +21,14 @@ SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
 
-###############
+
+# ############# #
 class GameState:
     def __init__(self):
         self.player_queue = []  # active players
         self.spectators = []  # inactive players
         self.dies = (0, 0)  # (0, 0) indicating initial state
         self.names = {}
-
 
     def end_turn(self):
         """
@@ -37,7 +37,6 @@ class GameState:
         """
         self.player_queue = self.player_queue[1:]+[self.player_queue[0]]
         self.broadcast_player_list()
-
 
     def broadcast_player_list(self):
         output = "Am Zug: "
@@ -48,53 +47,41 @@ class GameState:
         if self.player_queue:
             self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du bist dran!", "utf8"))
 
-    def update(self, client, message: str):
+    def update(self, client, message: dict):
         """
         updates GameState, processing input from any of the clients;
         if necessary, triggers relevant broadcasts/sends
-        :param message: input string as sent from one of the clients;
-            GAMESTATE_UPDATE_PREFIX has already been removed at this stage,
-            leaving us with (example):
-
-
-                PASS_DICE
-                REVEAL_DICE
-                ROLL_DICE
-                SET_NAMEawesomeName123 (not in use, name is set by first received message)
-                SET_PLAYER
-                SET_SPECTATOR
-
-
+        :param message: input json dictionary as sent from one of the clients
         :param client: client of the game server connection
         :return:
         """
         print(f"Updating GameState with message'{message}'")
-        if message.startswith("PASS_DICE"):
+        if "PASS_DICE" in message:
             if self.player_queue[0] == client:
                 self.end_turn()
                 self.player_queue[-1].send(
                     bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel an {self.names[self.player_queue[0]]} weitergegeben!",
                           "utf8"))
-        elif message.startswith("REVEAL_DICE"):
+        elif "REVEAL_DICE" in message:
             if self.player_queue[0] == client:
                 broadcast(f"{self.names[client]} deckt auf: ({self.dies[0]}/{self.dies[1]})")
                 self.player_queue[0].send(
                     bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Du hast die Würfel von {self.names[self.player_queue[-1]]} aufgedeckt!",
                           "utf8"))
                 self.end_turn()
-        elif message.startswith("ROLL_DICE"):
+        elif "ROLL_DICE" in message:
             if self.player_queue[0] == client:
                 self.dies = (random.randint(1, 6), random.randint(1, 6))
                 self.player_queue[0].send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Deine Würfel: ({self.dies[0]}/{self.dies[1]})", "utf8"))
                 self.end_turn()
-        elif message.startswith("SET_PLAYER"):
+        elif "SET_PLAYER" in message:
             if client in self.spectators:
                 self.spectators.remove(client)
             if client not in self.player_queue:
                 self.player_queue.append(client)
             client.send(bytes(f"{MESSAGE_SEPARATOR}{SET_PLAYER}", "utf8"))
             self.broadcast_player_list()
-        elif message.startswith("SET_SPECTATOR"):
+        elif "SET_SPECTATOR" in message:
             if client in self.player_queue:  # and self.player_queue[0] != client (do your turn first yo)
                 self.player_queue.remove(client)
             if client not in self.spectators:
@@ -109,7 +96,7 @@ class GameState:
 gameState = GameState()  # because global variables are fun
 
 
-############</GAME LOGIC>#################
+# ###########</GAME LOGIC>################ #
 
 
 def accept_incoming_connections():
@@ -139,9 +126,8 @@ def handle_client(client):  # Takes client socket as argument.
         msg = msg.decode("utf-8")  # convert from bytes to string
         print(f"handling message from client {gameState.names[client]}: \n {msg}")
         json_dict = json.loads(msg)
-        if msg.startswith(f"{GAMESTATE_UPDATE_PREFIX}"):
-            print("message started with gamestate update prefix!")
-            gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
+        if QUIT not in json_dict:
+            gameState.update(client=client, message=json_dict)
         else:
             #TODO: clean up this block and handle quitting a little more explicitely
             print(f"client{client} sent unexpected message: {msg}; closing connection")
