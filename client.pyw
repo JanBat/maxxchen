@@ -103,7 +103,7 @@ class Connection:
 
         connection_app = tkinter.Tk()
 
-        msg_string: tkinter.StringVar = tkinter.Stringvar()
+        msg_string: tkinter.StringVar = tkinter.StringVar()
         msg_string.set("Bitte Adresse eingeben!")
         msg = tkinter.Message(connection_app, textvariable=msg_string, relief=tkinter.RAISED, width=500)
         msg.pack(side=tkinter.TOP)
@@ -220,11 +220,6 @@ class App:
 
 if __name__ == "__main__":
 
-    TKINTER_MAIN_THREAD = Thread(target=tkinter.mainloop)
-    TKINTER_MAIN_THREAD.start()
-    CONNECTION_THREAD = Thread(target=Connection.setup)
-    CONNECTION_THREAD.start()
-    CONNECTION_THREAD.join()  # wait for connection app to finish its business before creating actual game app
+    Connection.setup()
+    tkinter.mainloop()
     app = App()
-
-    TKINTER_MAIN_THREAD.join()
