@@ -6,8 +6,8 @@ from threading import Thread
 import tkinter
 
 
-############<GAME LOGIC>##################
-# @ used as separator-prefix (in case buffer fills up with more than 1 message)
+# ###########<GAME LOGIC>################# #
+# @ used as separator-prefix (in case buffer fills up with more than 1 message) TODO: use jsons instead
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
@@ -19,7 +19,7 @@ SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
 
-############</GAME LOGIC>#################
+# ###########</GAME LOGIC>################ #
 BUFSIZ: int = 1024
 DEFAULT_ADDRESS: str = "192.168.1.10"
 DEFAULT_PORT: int = 63001
@@ -32,10 +32,10 @@ class Connection:
 
     @classmethod
     def setup(cls):
-        # set up port and host in separate miniapp
+        """collect PORT and HOST information as user input in separate mini app"""
 
         connection_app = tkinter.Tk()
-        connection_app.protocol("WM_DELETE_WINDOW", lambda: connection_app.quit())
+        connection_app.protocol("WM_DELETE_WINDOW", lambda: connection_app.destroy())
         msg_string: tkinter.StringVar = tkinter.StringVar()
         msg_string.set("Bitte Adresse eingeben!")
         msg = tkinter.Message(connection_app, textvariable=msg_string, relief=tkinter.RAISED, width=500)
@@ -53,8 +53,8 @@ class Connection:
             msg_string.set("Bitte Port eingeben!")
 
         def set_port(event=None):
-            Connection.PORT = entry_string.get()
-            connection_app.quit()
+            Connection.PORT = int(entry_string.get())
+            connection_app.destroy()
 
         entry_field.bind("<Return>", set_host)
 
@@ -100,13 +100,14 @@ class App:
 
     # App management:
     def connect(self):
+        """create a connection to the server and start a thread to handle package reception"""
         if not Connection.HOST or not Connection.PORT:
             self.top.quit()
 
-        ADDR = (Connection.HOST, Connection.PORT)
+        addr = (Connection.HOST, Connection.PORT)
 
         self.client_socket = socket(AF_INET, SOCK_STREAM)
-        self.client_socket.connect(ADDR)
+        self.client_socket.connect(addr)
 
         receive_thread = Thread(target=self.receive)
         receive_thread.start()
@@ -115,7 +116,7 @@ class App:
         """This function is to be called when the window is closed."""
         if self.client_socket:
             self.client_socket.send(bytes(QUIT, "utf8"))
-        self.top.quit()
+        self.top.destroy()
 
     def receive(self):
         """Handles receiving of messages."""
@@ -201,7 +202,7 @@ class App:
         self.msg_section.add_message(textvariable=self.player_list_box_str)
         self.msg_section.add_message(textvariable=self.private_msg_box_str)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
-        self.entry_field.bind("<Return>", App.set_name)
+        self.entry_field.bind("<Return>", self.set_name)
 
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
@@ -218,4 +219,7 @@ if __name__ == "__main__":
 
     Connection.setup()
     tkinter.mainloop()
+    # tkinter mainloop stops after Connection app is destroyed
     app = App()
+    tkinter.mainloop()
+
