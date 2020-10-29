@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Modified Script for Tkinter GUI chat client."""
+
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
@@ -19,8 +20,9 @@ SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
 
 ############</GAME LOGIC>#################
-BUFSIZ = 1024
-DEFAULT_ADDRESS = "192.168.1.10"
+BUFSIZ: int = 1024
+DEFAULT_ADDRESS: str = "192.168.1.10"
+DEFAULT_PORT: int = 63001
 
 def receive():
     """Handles receiving of messages."""
@@ -84,18 +86,7 @@ def on_closing(event=None):
     top.quit()
 
 
-def set_host(event=None):
-    connection_data["HOST"] = my_msg.get()
-    my_msg.set("63001")
-    entry_field.bind("<Return>", set_port)
-    private_msg_box_str.set("Bitte Port eingeben!")
 
-
-def set_port(event=None):
-    connection_data["PORT"] = my_msg.get()
-    my_msg.set("TestName1")
-    entry_field.bind("<Return>", set_name)
-    connect()
 
 
 
@@ -106,7 +97,36 @@ class Connection:
     PORT = ""
     HOST = ""
 
-class App:  
+    @classmethod
+    def setup(cls):
+        # set up port and host in separate miniapp
+
+        connection_app = tkinter.Tk()
+
+        msg_string: tkinter.StringVar = tkinter.Stringvar()
+        msg_string.set("Bitte Adresse eingeben!")
+        msg = tkinter.Message(connection_app, textvariable=msg_string, relief=tkinter.RAISED, width=500)
+        msg.pack(side=tkinter.TOP)
+
+        entry_string: tkinter.StringVar = tkinter.StringVar()
+        entry_string.set(DEFAULT_ADDRESS)
+        entry_field = tkinter.Entry(connection_app, textvariable=entry_string)
+        entry_field.pack(side=tkinter.TOP)
+
+        def set_host(event=None):
+            Connection.HOST = entry_string.get()
+            entry_string.set(DEFAULT_PORT)
+            entry_field.bind("<Return>", set_port)
+            msg_string.set("Bitte Port eingeben!")
+
+        def set_port(event=None):
+            Connection.PORT = entry_string.get()
+            connection_app.quit()
+
+        entry_field.bind("<Return>", set_host)
+
+
+class App:
 
     class AppSection:
         def __init__(self, top, orientation=tkinter.LEFT, fill=tkinter.NONE):
@@ -114,6 +134,8 @@ class App:
             self.frame: tkinter.Frame = tkinter.Frame(top)
             self.orientation = orientation
             self.fill = fill
+
+        # functions for managing visible componentsn (buttons, text fields)
 
         def _add_component(self, component):
             self.components.append(component)
@@ -161,13 +183,6 @@ class App:
         self.entry_str = tkinter.StringVar()
         self.entry_str.set(DEFAULT_ADDRESS)
 
-        # Game Moves:
-        self.game_move_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.LEFT)
-        self.game_move_section.add_button(text="Würfeln", command=roll_dice)
-        self.game_move_section.add_button(text="Verdeckt weitergeben", command=pass_dice)
-        self.game_move_section.add_button(text="Aufdecken", command=reveal_dice)
-        self.game_move_section.add_button(text="Mitspielen", command=set_player)
-
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.TOP, fill=tkinter.BOTH)
         self.msg_section.add_message(textvariable=self.public_msg_box_str)
@@ -175,6 +190,16 @@ class App:
         self.msg_section.add_message(textvariable=self.private_msg_box_str)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
         self.entry_field.bind("<Return>", set_host)
+
+        # Game Moves:
+        self.game_move_section: App.AppSection = App.AppSection(top=top, orientation=tkinter.LEFT)
+        self.game_move_section.add_button(text="Würfeln", command=roll_dice)
+        self.game_move_section.add_button(text="Verdeckt weitergeben", command=pass_dice)
+        self.game_move_section.add_button(text="Aufdecken", command=reveal_dice)
+        self.game_move_section.add_button(text="Mitspielen", command=set_player)
+
+        # Execute app and connect to server
+        self.connect()
 
     def connect(self):
 
@@ -194,5 +219,12 @@ class App:
 
 
 if __name__ == "__main__":
+
+    TKINTER_MAIN_THREAD = Thread(target=tkinter.mainloop)
+    TKINTER_MAIN_THREAD.start()
+    CONNECTION_THREAD = Thread(target=Connection.setup)
+    CONNECTION_THREAD.start()
+    CONNECTION_THREAD.join()  # wait for connection app to finish its business before creating actual game app
     app = App()
-    tkinter.mainloop()
+
+    TKINTER_MAIN_THREAD.join()

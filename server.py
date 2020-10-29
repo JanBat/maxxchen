@@ -192,5 +192,3 @@ if __name__ == "__main__":
     ACCEPT_THREAD.start()
     ACCEPT_THREAD.join()
     SERVER.close()
-    # hallo welt
-    # Testbranch!!!!333
