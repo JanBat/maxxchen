@@ -4,6 +4,7 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
+import json
 
 
 # ###########<GAME LOGIC>################# #
@@ -11,10 +12,10 @@ import tkinter
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
-GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
+SET_NAME = "SET_NAME"
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
@@ -115,7 +116,7 @@ class App:
     def on_closing(self, event=None):
         """This function is to be called when the window is closed."""
         if self.client_socket:
-            self.client_socket.send(bytes(QUIT, "utf8"))
+            self.send({QUIT: True})
         self.top.destroy()
 
     def receive(self):
@@ -124,7 +125,7 @@ class App:
             try:
                 rcvd = self.client_socket.recv(BUFSIZ).decode("utf8")
                 print(f"received message: \n{rcvd}")
-                msgs = rcvd.split("@")
+                msgs = rcvd.split(MESSAGE_SEPARATOR)
                 for msg in msgs:
                     if msg.startswith(PRIVATE_MSG_PREFIX):
                         msg = msg.replace(PRIVATE_MSG_PREFIX, "")
@@ -147,35 +148,37 @@ class App:
                 print(f"OSError: {e}")
                 return
 
-    def send(self, msg):
-        
-        self.client_socket.send(bytes(msg, "utf8"))
+    def send(self, msg: dict):
+        """
+        :param msg: dictionary (json)
+        """
+        self.client_socket.send(bytes(MESSAGE_SEPARATOR+json.dumps(msg), "utf8"))
         
     def set_name(self, event=None):  # event is passed by binders. (???)
         """Sends the initial "name" message."""
         name = self.entry_str.get()
-        self.send(name)  # maybe it would be neater to have a prefix for this as well?
+        self.send({SET_NAME: name})  # maybe it would be neater to have a prefix for this as well?
         self.entry_field.destroy()
         
     # Game interactions:
     def roll_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
+        msg = {"ROLL_DICE": True}
         self.send(msg)
 
     def pass_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
+        msg = {"PASS_DICE": True}
         self.send(msg)
 
     def reveal_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
+        msg = {"REVEAL_DICE": True}
         self.send(msg)
 
     def set_player(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_PLAYER}"
+        msg = {SET_PLAYER: True}
         self.send(msg)
 
     def set_spectator(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_SPECTATOR}"
+        msg = {SET_SPECTATOR: True}
         self.send(msg)
         
     def __init__(self):

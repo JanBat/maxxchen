@@ -2,8 +2,9 @@
 """Server for multithreaded (asynchronous) chat application."""
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
+import json
 import random
-from typing import List
+
 
 ############<GAME LOGIC>##################
 
@@ -12,10 +13,10 @@ from typing import List
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
-GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
+SET_NAME = "SET_NAME"
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
@@ -104,14 +105,6 @@ class GameState:
             print(f"Unexpected message: {message}. Aborting.")
             raise NotImplementedError
 
-    def __repr__(self):
-        """
-        string representation of the GameState, to be used for 'public' broadcasts
-
-        :return:
-        """
-        raise NotImplementedError
-
 
 gameState = GameState()  # because global variables are fun
 
@@ -125,7 +118,7 @@ def accept_incoming_connections():
     while True:
         client, client_address = SERVER.accept()
         print("%s:%s has connected." % client_address)
-        client.send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxchen? \n ..bitte Name eingeben =)", "utf8"))
+        client.send(bytes(f"{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Heeeey Lust auf Mäxxchen? \n ..bitte Name eingeben =)", "utf8"))
         addresses[client] = client_address
         clients.append(client)
         Thread(target=handle_client, args=(client,)).start()
@@ -134,9 +127,10 @@ def accept_incoming_connections():
 def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
-    name = client.recv(BUFSIZ).decode("utf8")
+    first_contact = json.loads(client.recv(BUFSIZ).decode("utf8"))
+
     welcome = f'{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
-    gameState.names[client] = name
+    gameState.names[client] = first_contact[SET_NAME]
     client.send(bytes(welcome, "utf8"))
     gameState.broadcast_player_list()
 
@@ -144,6 +138,7 @@ def handle_client(client):  # Takes client socket as argument.
         msg = client.recv(BUFSIZ)
         msg = msg.decode("utf-8")  # convert from bytes to string
         print(f"handling message from client {gameState.names[client]}: \n {msg}")
+        json_dict = json.loads(msg)
         if msg.startswith(f"{GAMESTATE_UPDATE_PREFIX}"):
             print("message started with gamestate update prefix!")
             gameState.update(client=client, message=str(msg).replace(GAMESTATE_UPDATE_PREFIX, ""))
