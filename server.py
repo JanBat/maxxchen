@@ -113,11 +113,11 @@ def accept_incoming_connections():
 
 def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
-
-    first_contact = json.loads(client.recv(BUFSIZ).decode("utf8"))
-
+    rcvd = client.recv(BUFSIZ).decode("utf8")
+    first_contact = json.loads(rcvd)
+    name = first_contact[SET_NAME]
     welcome = f'{MESSAGE_SEPARATOR}{PRIVATE_MSG_PREFIX}Hey %s! Alle Nachrichten in diesem Feld sind nur für deine Augen bestimmt!.' % name
-    gameState.names[client] = first_contact[SET_NAME]
+    gameState.names[client] = name
     client.send(bytes(welcome, "utf8"))
     gameState.broadcast_player_list()
 

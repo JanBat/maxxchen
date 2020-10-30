@@ -152,7 +152,7 @@ class App:
         """
         :param msg: dictionary (json)
         """
-        self.client_socket.send(bytes(MESSAGE_SEPARATOR+json.dumps(msg), "utf8"))
+        self.client_socket.send(bytes(json.dumps(msg), "utf8"))
         
     def set_name(self, event=None):  # event is passed by binders. (???)
         """Sends the initial "name" message."""
