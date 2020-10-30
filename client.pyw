@@ -7,10 +7,11 @@ import tkinter
 import json
 
 
-# ###########<GAME LOGIC>################# #
+# ###########<MESSAGING>################## #
 # @ used as separator-prefix (in case buffer fills up with more than 1 message) TODO: use jsons instead
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
+
 MESSAGE_SEPARATOR = "@"
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
@@ -20,7 +21,19 @@ SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
 
-# ###########</GAME LOGIC>################ #
+# ###########</MESSAGING>################# #
+
+# ###########<GAME CONFIG>################ #
+COLOR_BACKGROUND = 'gainsboro'
+COLOR_MESSAGE_1 = 'whitesmoke'
+COLOR_MESSAGE_2 = 'ghostwhite'
+COLOR_ROLL = 'dodgerblue'
+COLOR_PASS = 'gold'
+COLOR_PLAY = 'lime'
+COLOR_REVEAL = 'tomato'
+GAME_TITLE = "Mäxxchen"
+GAME_DEFAULT_RESOLUTION = "600x150"
+# ###########</GAME CONFIG>############### #
 BUFSIZ: int = 1024
 DEFAULT_ADDRESS: str = "192.168.1.10"
 DEFAULT_PORT: int = 63001
@@ -36,6 +49,7 @@ class Connection:
         """collect PORT and HOST information as user input in separate mini app"""
 
         connection_app = tkinter.Tk()
+        connection_app.title("Mäxxchen-Login")
         connection_app.protocol("WM_DELETE_WINDOW", lambda: connection_app.destroy())
         msg_string: tkinter.StringVar = tkinter.StringVar()
         msg_string.set("Bitte Adresse eingeben!")
@@ -76,8 +90,8 @@ class App:
             component.pack(side=self.orientation, fill=self.fill)
             self.frame.pack()  # not sure if correct place for this (TODO: find out)
 
-        def add_button(self, text: str, command):
-            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command)
+        def add_button(self, text: str, command, color=COLOR_BACKGROUND):
+            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command, height=3, width=20, bg=color)
             self._add_component(new_button)
             return new_button
 
@@ -86,8 +100,8 @@ class App:
             self._add_component(new_entry)
             return new_entry
 
-        def add_message(self, textvariable: tkinter.StringVar, relief=tkinter.RAISED, width=500):
-            msg = tkinter.Message(self.frame, textvariable=textvariable, relief=relief, width=width)
+        def add_message(self, textvariable: tkinter.StringVar, relief=tkinter.RAISED, width=500, color=COLOR_MESSAGE_1):
+            msg = tkinter.Message(self.frame, textvariable=textvariable, relief=relief, bg=color, width=width)
             self._add_component(msg)
             return msg
 
@@ -129,7 +143,7 @@ class App:
                 for msg in msgs:
                     msg_as_json = json.loads(msg)
                     for key in msg_as_json:
-                        if key == PRIVATE_MSG_PREFIX:  # TODO: maybestop this elif chain madness-in-the-making and use a dictionary instead
+                        if key == PRIVATE_MSG_PREFIX:  # TODO: maybe stop this elif chain madness-in-the-making and use a dictionary instead
                             self.private_msg_box_str.set(msg_as_json[key])
                         elif key == PUBLIC_MSG_PREFIX:
                             self.public_msg_box_str.set(msg_as_json[key])
@@ -185,7 +199,10 @@ class App:
         self.client_socket = None
 
         self.top = tkinter.Tk()
-        self.top.title("Mäxxchen")
+        self.top.title(GAME_TITLE)
+        self.top.geometry(GAME_DEFAULT_RESOLUTION)
+        self.top.configure(bg=COLOR_BACKGROUND)
+        self.top.resizable(0, 0)
         self.top.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # various strings used by the application:
@@ -200,18 +217,19 @@ class App:
 
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP, fill=tkinter.BOTH)
-        self.msg_section.add_message(textvariable=self.public_msg_box_str)
-        self.msg_section.add_message(textvariable=self.player_list_box_str)
-        self.msg_section.add_message(textvariable=self.private_msg_box_str)
+        self.msg_section.add_message(textvariable=self.public_msg_box_str, color=COLOR_MESSAGE_1)
+        self.msg_section.add_message(textvariable=self.player_list_box_str, color=COLOR_MESSAGE_2)
+        self.msg_section.add_message(textvariable=self.private_msg_box_str, color=COLOR_MESSAGE_1)
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
         self.entry_field.bind("<Return>", self.set_name)
 
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
-        self.game_move_section.add_button(text="Würfeln", command=self.roll_dice)
-        self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice)
-        self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice)
-        self.game_move_section.add_button(text="Mitspielen", command=self.set_player)
+        self.game_move_section.add_button(text="Würfeln", command=self.roll_dice, color=COLOR_ROLL)
+        self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice, color=COLOR_PASS)
+        self.game_move_section.add_button(text="Mitspielen", command=self.set_player, color=COLOR_PLAY)
+        self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice, color=COLOR_REVEAL)
+
 
         # Execute app and connect to server
         self.connect()
