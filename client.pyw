@@ -4,6 +4,7 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
+import json
 
 
 # ###########<GAME LOGIC>################# #
@@ -11,10 +12,10 @@ import tkinter
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
 MESSAGE_SEPARATOR = "@"
-GAMESTATE_UPDATE_PREFIX = 'GAMESTATE_UPDATE_MSG: '
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
+SET_NAME = "SET_NAME"
 SET_PLAYER = "SET_PLAYER"
 SET_SPECTATOR = "SET_SPECTATOR"
 QUIT = "QUIT"
@@ -115,7 +116,7 @@ class App:
     def on_closing(self, event=None):
         """This function is to be called when the window is closed."""
         if self.client_socket:
-            self.client_socket.send(bytes(QUIT, "utf8"))
+            self.send({QUIT: True})
         self.top.destroy()
 
     def receive(self):
@@ -124,58 +125,59 @@ class App:
             try:
                 rcvd = self.client_socket.recv(BUFSIZ).decode("utf8")
                 print(f"received message: \n{rcvd}")
-                msgs = rcvd.split("@")
+                msgs = [l for l in rcvd.split(MESSAGE_SEPARATOR) if l]
                 for msg in msgs:
-                    if msg.startswith(PRIVATE_MSG_PREFIX):
-                        msg = msg.replace(PRIVATE_MSG_PREFIX, "")
-                        self.private_msg_box_str.set(msg)
-                    elif msg.startswith(PUBLIC_MSG_PREFIX):
-                        msg = msg.replace(PUBLIC_MSG_PREFIX, "")
-                        self.public_msg_box_str.set(msg)
-                    elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
-                        msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
-                        self.player_list_box_str.set(msg)
-                    elif msg.startswith(SET_PLAYER):
-                        self.game_move_section.components[3].configure(text="Zuschauen", command=self.set_spectator)
-                    elif msg.startswith(SET_SPECTATOR):
-                        self.game_move_section.components[3].configure(text="Mitspielen", command=self.set_player)
-                    elif msg.startswith(QUIT):
-                        return
-                    else:
-                        print(f"message neither public nor private: {msg}")
+                    msg_as_json = json.loads(msg)
+                    for key in msg_as_json:
+                        if key == PRIVATE_MSG_PREFIX:  # TODO: maybestop this elif chain madness-in-the-making and use a dictionary instead
+                            self.private_msg_box_str.set(msg_as_json[key])
+                        elif key == PUBLIC_MSG_PREFIX:
+                            self.public_msg_box_str.set(msg_as_json[key])
+                        elif key == PLAYER_LIST_MSG_PREFIX:
+                            self.player_list_box_str.set(msg_as_json[key])
+                        elif key == SET_PLAYER:
+                            self.game_move_section.components[3].configure(text="Zuschauen", command=self.set_spectator)
+                        elif key == SET_SPECTATOR:
+                            self.game_move_section.components[3].configure(text="Mitspielen", command=self.set_player)
+                        elif key == QUIT:
+                            return
+                        else:
+                            print(f"message neither public nor private: {msg}")
             except OSError as e:  # Possibly client has left the chat.
                 print(f"OSError: {e}")
                 return
 
-    def send(self, msg):
-        
-        self.client_socket.send(bytes(msg, "utf8"))
+    def send(self, msg: dict):
+        """
+        :param msg: dictionary (json)
+        """
+        self.client_socket.send(bytes(json.dumps(msg), "utf8"))
         
     def set_name(self, event=None):  # event is passed by binders. (???)
         """Sends the initial "name" message."""
         name = self.entry_str.get()
-        self.send(name)  # maybe it would be neater to have a prefix for this as well?
+        self.send({SET_NAME: name})  # maybe it would be neater to have a prefix for this as well?
         self.entry_field.destroy()
         
     # Game interactions:
     def roll_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}ROLL_DICE"
+        msg = {"ROLL_DICE": True}
         self.send(msg)
 
     def pass_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}PASS_DICE"
+        msg = {"PASS_DICE": True}
         self.send(msg)
 
     def reveal_dice(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}REVEAL_DICE"
+        msg = {"REVEAL_DICE": True}
         self.send(msg)
 
     def set_player(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_PLAYER}"
+        msg = {SET_PLAYER: True}
         self.send(msg)
 
     def set_spectator(self, event=None):  # event is passed by binders.
-        msg = f"{GAMESTATE_UPDATE_PREFIX}{SET_SPECTATOR}"
+        msg = {SET_SPECTATOR: True}
         self.send(msg)
         
     def __init__(self):
