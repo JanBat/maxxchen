@@ -125,22 +125,20 @@ class App:
             try:
                 rcvd = self.client_socket.recv(BUFSIZ).decode("utf8")
                 print(f"received message: \n{rcvd}")
-                msgs = rcvd.split(MESSAGE_SEPARATOR)
-                for msg in msgs:
-                    if msg.startswith(PRIVATE_MSG_PREFIX):
-                        msg = msg.replace(PRIVATE_MSG_PREFIX, "")
-                        self.private_msg_box_str.set(msg)
-                    elif msg.startswith(PUBLIC_MSG_PREFIX):
-                        msg = msg.replace(PUBLIC_MSG_PREFIX, "")
-                        self.public_msg_box_str.set(msg)
-                    elif msg.startswith(PLAYER_LIST_MSG_PREFIX):
-                        msg = msg.replace(PLAYER_LIST_MSG_PREFIX, "")
-                        self.player_list_box_str.set(msg)
-                    elif msg.startswith(SET_PLAYER):
+                # msgs = rcvd.split(MESSAGE_SEPARATOR)
+                msg_as_json = json.loads(rcvd)
+                for key in msg_as_json:
+                    if key == PRIVATE_MSG_PREFIX:  # TODO: maybestop this elif chain madness-in-the-making and use a dictionary instead
+                        self.private_msg_box_str.set(msg_as_json[key])
+                    elif key == PUBLIC_MSG_PREFIX:
+                        self.public_msg_box_str.set(msg_as_json[key])
+                    elif key == PLAYER_LIST_MSG_PREFIX:
+                        self.player_list_box_str.set(msg_as_json[key])
+                    elif key == SET_PLAYER:
                         self.game_move_section.components[3].configure(text="Zuschauen", command=self.set_spectator)
-                    elif msg.startswith(SET_SPECTATOR):
+                    elif key == SET_SPECTATOR:
                         self.game_move_section.components[3].configure(text="Mitspielen", command=self.set_player)
-                    elif msg.startswith(QUIT):
+                    elif key == QUIT:
                         return
                     else:
                         print(f"message neither public nor private: {msg}")

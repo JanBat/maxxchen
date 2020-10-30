@@ -12,7 +12,7 @@ import random
 # @ used as separator-prefix (in case buffer fills up with more than 1 message)
 # to contain both client and server in their entirety in 1 script each,
 # there's a copy of these constants in both files (not elegant, but hey)
-MESSAGE_SEPARATOR = "@"
+# MESSAGE_SEPARATOR = "@"
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
