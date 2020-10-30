@@ -91,7 +91,7 @@ class App:
             self.frame.pack()  # not sure if correct place for this (TODO: find out)
 
         def add_button(self, text: str, command, color=COLOR_BACKGROUND):
-            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command, height=3, width=20, bg=color)
+            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command, height=3, width=15, bg=color)
             self._add_component(new_button)
             return new_button
 
