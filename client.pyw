@@ -60,7 +60,7 @@ class Connection:
         msg.pack(side=tkinter.TOP)
 
         entry_string: tkinter.StringVar = tkinter.StringVar()
-        entry_string.set(DEFAULT_ADDRESS)
+        entry_string.set("--------")  # TODO: random names? :D
         entry_field = tkinter.Entry(connection_app, textvariable=entry_string)
         entry_field.pack(side=tkinter.TOP)
 
@@ -253,8 +253,8 @@ class App:
             subsection = tkinter.Frame(self.dice_section.frame)
             self.dice_section._add_component(subsection)
             for die in DICE_RESULTS[i:i+7]:
-                self.dice_section.add_button(text=str(die), top=subsection, command=lambda d=die: self.declare_dice(d), color=COLOR_REVEAL,
-                                             height=2, width=2, side=tkinter.LEFT)
+                self.dice_section.add_button(text=str(f"({die[0]}/{die[1]})"), top=subsection, command=lambda d=die: self.declare_dice(d), color=COLOR_REVEAL,
+                                             height=3, width=3, side=tkinter.LEFT)
 
         if TOGGLE_DICE:
             self.dice_section.deactivate()
