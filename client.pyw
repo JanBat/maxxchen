@@ -13,6 +13,7 @@ import json
 # there's a copy of these constants in both files (not elegant, but hey)
 
 MESSAGE_SEPARATOR = "@"
+DICE_MSG_PREFIX = "DICE: "
 PRIVATE_MSG_PREFIX = 'PRIVATE: '
 PUBLIC_MSG_PREFIX = 'PUBLIC: '
 PLAYER_LIST_MSG_PREFIX = 'PLAYER_LIST: '
@@ -32,13 +33,15 @@ COLOR_PASS = 'gold'
 COLOR_PLAY = 'lime'
 COLOR_REVEAL = 'tomato'
 GAME_TITLE = "Mäxxchen"
-GAME_DEFAULT_RESOLUTION = "600x150"
+GAME_DEFAULT_RESOLUTION = "600x400"
 # ###########</GAME CONFIG>############### #
 BUFSIZ: int = 1024
 DEFAULT_ADDRESS: str = "192.168.1.10"
 DEFAULT_PORT: int = 63001
 
-
+DICE_RESULTS = [(3, 1), (3, 2), (4, 1), (4, 2), (4, 3), (5, 1), (5, 2), (5, 3), (5, 4), (6, 1), (6, 2), (6, 3), (6, 4),
+                (6, 5), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (2, 1)]
+TOGGLE_DICE = False
 class Connection:
     """handles collection and storage of connection data (port+host). does not actually connect to anything"""
     PORT = ""
@@ -57,7 +60,7 @@ class Connection:
         msg.pack(side=tkinter.TOP)
 
         entry_string: tkinter.StringVar = tkinter.StringVar()
-        entry_string.set(DEFAULT_ADDRESS)
+        entry_string.set("--------")  # TODO: random names? :D
         entry_field = tkinter.Entry(connection_app, textvariable=entry_string)
         entry_field.pack(side=tkinter.TOP)
 
@@ -85,14 +88,15 @@ class App:
 
         # functions for managing abstract visible components (buttons, text fields)
 
-        def _add_component(self, component):
+        def _add_component(self, component, side=None, fill=None):
             self.components.append(component)
-            component.pack(side=self.orientation, fill=self.fill)
-            self.frame.pack()  # not sure if correct place for this (TODO: find out)
+            component.pack(side=side if side else self.orientation, fill=fill if fill else self.fill)
+            self.frame.pack()
 
-        def add_button(self, text: str, command, color=COLOR_BACKGROUND):
-            new_button: tkinter.Button = tkinter.Button(self.frame, text=text, command=command, height=3, width=15, bg=color)
-            self._add_component(new_button)
+        def add_button(self, text: str, command, top=None, color=COLOR_BACKGROUND, height=3, width=15, side=None, fill=None ):
+            print(f"Adding button: {text} \n {color}")
+            new_button: tkinter.Button = tkinter.Button(top if top else self.frame, text=text, command=command, height=height, width=width, bg=color)
+            self._add_component(new_button, side=side, fill=fill)
             return new_button
 
         def add_entry(self, textvariable: tkinter.StringVar):
@@ -149,10 +153,14 @@ class App:
                             self.public_msg_box_str.set(msg_as_json[key])
                         elif key == PLAYER_LIST_MSG_PREFIX:
                             self.player_list_box_str.set(msg_as_json[key])
-                        elif key == SET_PLAYER:
-                            self.game_move_section.components[3].configure(text="Zuschauen", command=self.set_spectator)
+                        elif key == DICE_MSG_PREFIX:
+                            if TOGGLE_DICE:
+                                self.dice_section.activate()
+                            self.private_msg_box_str.set(msg_as_json[key])
+                        elif key == SET_PLAYER:  # targetting the button via index 2 is super hacky (TODO: maybe fix)
+                            self.game_move_section.components[2].configure(text="Zuschauen", command=self.set_spectator)
                         elif key == SET_SPECTATOR:
-                            self.game_move_section.components[3].configure(text="Mitspielen", command=self.set_player)
+                            self.game_move_section.components[2].configure(text="Mitspielen", command=self.set_player)
                         elif key == QUIT:
                             return
                         else:
@@ -174,6 +182,13 @@ class App:
         self.entry_field.destroy()
         
     # Game interactions:
+
+    def declare_dice(self, declaration, event=None):
+        msg = {DICE_MSG_PREFIX: declaration}
+        self.send(msg)
+        if TOGGLE_DICE:
+            self.dice_section.deactivate()
+
     def roll_dice(self, event=None):  # event is passed by binders.
         msg = {"ROLL_DICE": True}
         self.send(msg)
@@ -202,7 +217,7 @@ class App:
         self.top.title(GAME_TITLE)
         self.top.geometry(GAME_DEFAULT_RESOLUTION)
         self.top.configure(bg=COLOR_BACKGROUND)
-        self.top.resizable(0, 0)
+        self.top.resizable(width=0, height=1)
         self.top.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # various strings used by the application:
@@ -223,6 +238,8 @@ class App:
         self.entry_field: tkinter.Entry = self.msg_section.add_entry(textvariable=self.entry_str)
         self.entry_field.bind("<Return>", self.set_name)
 
+
+
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
         self.game_move_section.add_button(text="Würfeln", command=self.roll_dice, color=COLOR_ROLL)
@@ -230,7 +247,17 @@ class App:
         self.game_move_section.add_button(text="Mitspielen", command=self.set_player, color=COLOR_PLAY)
         self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice, color=COLOR_REVEAL)
 
+        # Dice Selection Box:   (here be Spaghetti Monsters)
+        self.dice_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP)
+        for i in [0, 7, 14]:  # Dörthe says hi
+            subsection = tkinter.Frame(self.dice_section.frame)
+            self.dice_section._add_component(subsection)
+            for die in DICE_RESULTS[i:i+7]:
+                self.dice_section.add_button(text=str(f"({die[0]}/{die[1]})"), top=subsection, command=lambda d=die: self.declare_dice(d), color=COLOR_REVEAL,
+                                             height=3, width=3, side=tkinter.LEFT)
 
+        if TOGGLE_DICE:
+            self.dice_section.deactivate()
         # Execute app and connect to server
         self.connect()
 
