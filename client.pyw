@@ -228,7 +228,7 @@ class App:
         self.private_msg_box_str = tkinter.StringVar()
         self.private_msg_box_str.set("Bitte Host-IP eingeben!")
         self.entry_str = tkinter.StringVar()
-        self.entry_str.set("...") # TODO: random names?
+        self.entry_str.set("<hier Name eingeben>") # TODO: random names?
 
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP, fill=tkinter.BOTH)

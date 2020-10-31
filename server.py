@@ -149,7 +149,7 @@ class GameState:
             elif DICE_MSG_PREFIX == key:
                 if self.player_queue[0] == client:
                     self.last_declaration_tuple = (client, message[key])
-                    declaration_msg = f"Du hast {self.dice} gewürfelt und {message[key]} angegeben.\n"
+                    declaration_msg = f"Du hast ({self.dice[0]}/{self.dice[1]}) gewürfelt und ({message[key][0]}/{message[key][1]}) angegeben.\n"
                     if GameState.is_result_better(message[key], self.dice):
                         declaration_msg += "Du Schlingel! :D"
                     else:
