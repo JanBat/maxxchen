@@ -33,11 +33,12 @@ COLOR_PASS = 'gold'
 COLOR_PLAY = 'lime'
 COLOR_REVEAL = 'tomato'
 GAME_TITLE = "Mäxxchen"
-GAME_DEFAULT_RESOLUTION = "600x400"
+GAME_DEFAULT_RESOLUTION = "650x400"
 # ###########</GAME CONFIG>############### #
 BUFSIZ: int = 1024
 DEFAULT_ADDRESS: str = "192.168.1.10"
 DEFAULT_PORT: int = 63001
+FONT ='Helvetica 10 bold'
 
 DICE_RESULTS = [(3, 1), (3, 2), (4, 1), (4, 2), (4, 3), (5, 1), (5, 2), (5, 3), (5, 4), (6, 1), (6, 2), (6, 3), (6, 4),
                 (6, 5), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (2, 1)]
@@ -93,19 +94,19 @@ class App:
             component.pack(side=side if side else self.orientation, fill=fill if fill else self.fill)
             self.frame.pack()
 
-        def add_button(self, text: str, command, top=None, color=COLOR_BACKGROUND, height=3, width=15, side=None, fill=None ):
+        def add_button(self, text: str, command, top=None, color=COLOR_BACKGROUND, font=FONT, height=3, width=20, side=None, fill=None ):
             print(f"Adding button: {text} \n {color}")
-            new_button: tkinter.Button = tkinter.Button(top if top else self.frame, text=text, command=command, height=height, width=width, bg=color)
+            new_button: tkinter.Button = tkinter.Button(top if top else self.frame, font=font, text=text, command=command, height=height, width=width, bg=color)
             self._add_component(new_button, side=side, fill=fill)
             return new_button
 
-        def add_entry(self, textvariable: tkinter.StringVar):
-            new_entry: tkinter.Entry = tkinter.Entry(self.frame, textvariable=textvariable)
+        def add_entry(self, textvariable: tkinter.StringVar, font=FONT):
+            new_entry: tkinter.Entry = tkinter.Entry(self.frame, textvariable=textvariable, font=font)
             self._add_component(new_entry)
             return new_entry
 
-        def add_message(self, textvariable: tkinter.StringVar, relief=tkinter.RAISED, width=500, color=COLOR_MESSAGE_1):
-            msg = tkinter.Message(self.frame, textvariable=textvariable, relief=relief, bg=color, width=width)
+        def add_message(self, textvariable: tkinter.StringVar, relief=tkinter.RAISED, width=500, color=COLOR_MESSAGE_1, font=FONT):
+            msg = tkinter.Message(self.frame, textvariable=textvariable, relief=relief, bg=color, font=font, width=width)
             self._add_component(msg)
             return msg
 
@@ -222,13 +223,13 @@ class App:
 
         # various strings used by the application:
         self.public_msg_box_str = tkinter.StringVar()
-        self.public_msg_box_str.set("Willkommen bei Maxxchen!")
+        self.public_msg_box_str.set("Willkommen bei Mäxxchen!")
         self.player_list_box_str = tkinter.StringVar()
         self.player_list_box_str.set("...")
         self.private_msg_box_str = tkinter.StringVar()
         self.private_msg_box_str.set("Bitte Host-IP eingeben!")
         self.entry_str = tkinter.StringVar()
-        self.entry_str.set("<hier Name eingeben>") # TODO: random names?
+        self.entry_str.set("<hier Name eingeben>")  # TODO: random names?
 
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP, fill=tkinter.BOTH)
