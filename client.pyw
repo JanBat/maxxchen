@@ -60,7 +60,7 @@ class Connection:
         msg.pack(side=tkinter.TOP)
 
         entry_string: tkinter.StringVar = tkinter.StringVar()
-        entry_string.set("--------")  # TODO: random names? :D
+        entry_string.set(DEFAULT_ADDRESS)
         entry_field = tkinter.Entry(connection_app, textvariable=entry_string)
         entry_field.pack(side=tkinter.TOP)
 
@@ -228,7 +228,7 @@ class App:
         self.private_msg_box_str = tkinter.StringVar()
         self.private_msg_box_str.set("Bitte Host-IP eingeben!")
         self.entry_str = tkinter.StringVar()
-        self.entry_str.set(DEFAULT_ADDRESS)
+        self.entry_str.set("...") # TODO: random names?
 
         # Message Box:
         self.msg_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.TOP, fill=tkinter.BOTH)
