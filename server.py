@@ -31,6 +31,7 @@ class GameState:
     def __init__(self):
         self.player_queue = []  # active players
         self.spectators = []  # inactive players
+        self.alea_iacta_est = False
         self.dice = (0, 0)  # (0, 0) indicating initial state
         self.names = {}
         self.points = {}
@@ -42,6 +43,7 @@ class GameState:
         :return:
         """
         self.player_queue = self.player_queue[1:]+[self.player_queue[0]]
+        self.alea_iacta_est = False
         self.broadcast_player_list()
 
     def broadcast_player_list(self):
@@ -60,13 +62,14 @@ class GameState:
         """
         compares dice1 and dice2 and determines if dice 1 is better than dice2
         """
-        result = None
+
         def is_pasch(dice):
             if dice[0] == dice[1]:
-                result = False
+                return True
             else:
-                result = False
+                return False
 
+        result = None
         if dice1 == dice2:
             result = True
         elif dice1 == MÄXCHEN:
@@ -81,10 +84,6 @@ class GameState:
             result = True
         else:
             result = False
-        if result:
-            print(f"{dice1}(claimed) was better than {dice2}(real)")
-        else:
-            print(f"{dice1}(claimed) was equal/worse than {dice2}(real)")
         return result
 
     def update(self, client, message: dict):
@@ -119,11 +118,13 @@ class GameState:
                     self.player_queue.insert(0, loser)
                     send(loser, {PRIVATE_MSG_PREFIX: f"Versuch's direkt noch mal, viel Glück beim nächsten Versuch!\n"
                                                      f"(du bist dran)"})
+                    self.dice = (0, 0)  # reset dice
                     self.broadcast_player_list()
 
             elif "ROLL_DICE" == key:
-                if self.player_queue[0] == client:
+                if self.player_queue[0] == client and not self.alea_iacta_est:
                     self.dice = (random.randint(1, 6), random.randint(1, 6))
+                    self.alea_iacta_est = True
                     # presort dice by size:
                     if self.dice[1] > self.dice[0]:
                         self.dice = (self.dice[1], self.dice[0])

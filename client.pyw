@@ -159,9 +159,9 @@ class App:
                                 self.dice_section.activate()
                             self.private_msg_box_str.set(msg_as_json[key])
                         elif key == SET_PLAYER:  # targetting the button via index 2 is super hacky (TODO: maybe fix)
-                            self.game_move_section.components[2].configure(text="Zuschauen", command=self.set_spectator)
+                            self.game_move_section.components[1].configure(text="Zuschauen", command=self.set_spectator)
                         elif key == SET_SPECTATOR:
-                            self.game_move_section.components[2].configure(text="Mitspielen", command=self.set_player)
+                            self.game_move_section.components[1].configure(text="Mitspielen", command=self.set_player)
                         elif key == QUIT:
                             return
                         else:
@@ -244,7 +244,7 @@ class App:
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
         self.game_move_section.add_button(text="Würfeln", command=self.roll_dice, color=COLOR_ROLL)
-        self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice, color=COLOR_PASS)
+        #self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice, color=COLOR_PASS)
         self.game_move_section.add_button(text="Mitspielen", command=self.set_player, color=COLOR_PLAY)
         self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice, color=COLOR_REVEAL)
 
