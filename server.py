@@ -32,7 +32,7 @@ class GameState:
         self.player_queue = []  # active players
         self.spectators = []  # inactive players
         self.alea_iacta_est = False
-        self.dice = (0, 0)  # (0, 0) indicating initial state
+        self.dice = (1, 0)  # (0, 0) indicating initial state
         self.names = {}
         self.points = {}
         self.last_declaration_tuple = (None, None)  # (Client, Dice Declaration Tuple)
