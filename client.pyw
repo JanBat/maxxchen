@@ -29,9 +29,9 @@ COLOR_BACKGROUND = 'gainsboro'
 COLOR_MESSAGE_1 = 'whitesmoke'
 COLOR_MESSAGE_2 = 'ghostwhite'
 COLOR_ROLL = 'dodgerblue'
-COLOR_PASS = 'gold'
+COLOR_DICE = 'tomato'
 COLOR_PLAY = 'lime'
-COLOR_REVEAL = 'tomato'
+COLOR_REVEAL = 'gold'
 GAME_TITLE = "Mäxxchen"
 GAME_DEFAULT_RESOLUTION = "650x400"
 # ###########</GAME CONFIG>############### #
@@ -244,7 +244,7 @@ class App:
         # Game Moves:
         self.game_move_section: App.AppSection = App.AppSection(top=self.top, orientation=tkinter.LEFT)
         self.game_move_section.add_button(text="Würfeln", command=self.roll_dice, color=COLOR_ROLL)
-        #self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice, color=COLOR_PASS)
+        #self.game_move_section.add_button(text="Verdeckt weitergeben", command=self.pass_dice, color=COLOR_DICE)
         self.game_move_section.add_button(text="Mitspielen", command=self.set_player, color=COLOR_PLAY)
         self.game_move_section.add_button(text="Aufdecken", command=self.reveal_dice, color=COLOR_REVEAL)
 
@@ -254,7 +254,7 @@ class App:
             subsection = tkinter.Frame(self.dice_section.frame)
             self.dice_section._add_component(subsection)
             for die in DICE_RESULTS[i:i+7]:
-                self.dice_section.add_button(text=str(f"({die[0]}/{die[1]})"), top=subsection, command=lambda d=die: self.declare_dice(d), color=COLOR_REVEAL,
+                self.dice_section.add_button(text=str(f"({die[0]}/{die[1]})"), top=subsection, command=lambda d=die: self.declare_dice(d), color=COLOR_DICE,
                                              height=3, width=3, side=tkinter.LEFT)
 
         if TOGGLE_DICE:

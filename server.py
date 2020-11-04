@@ -118,7 +118,7 @@ class GameState:
                     self.player_queue.insert(0, loser)
                     send(loser, {PRIVATE_MSG_PREFIX: f"Versuch's direkt noch mal, viel Glück beim nächsten Versuch!\n"
                                                      f"(du bist dran)"})
-                    self.dice = (0, 0)  # reset dice
+                    self.dice = (1, 0)  # reset dice
                     self.broadcast_player_list()
 
             elif "ROLL_DICE" == key:
