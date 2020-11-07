@@ -152,7 +152,7 @@ class GameState:
                     self.broadcast_player_list()
             elif DICE_MSG_PREFIX == key:
                 # only process the message if the player called a result higher than the previously stored "best" result
-                if self.player_queue[0] == client and GameState.is_result_better(message[key], self.last_declaration_tuple):
+                if self.player_queue[0] == client and not GameState.is_result_better(self.last_declaration_tuple[1], message[key]):
                     self.last_declaration_tuple = (client, message[key])
                     declaration_msg = f"Du hast ({self.dice[0]}/{self.dice[1]}) gewürfelt und ({message[key][0]}/{message[key][1]}) angegeben.\n"
                     if GameState.is_result_better(message[key], self.dice):
