@@ -35,7 +35,7 @@ class GameState:
         self.dice = (1, 0)  # (1, 0) indicating initial state
         self.names = {}
         self.points = {}
-        self.last_declaration_tuple = (None, None)  # (Client, Dice Declaration Tuple)
+        self.last_declaration_tuple = (None, (1, 0))  # (Client, Dice Declaration Tuple)
 
     def end_turn(self):
         """
@@ -122,6 +122,7 @@ class GameState:
                     send(loser, {PRIVATE_MSG_PREFIX: f"Versuch's direkt noch mal, viel Glück beim nächsten Versuch!\n"
                                                      f"(du bist dran)"})
                     self.dice = (1, 0)  # reset dice
+                    self.last_declaration_tuple = (None, (1, 0))  # reset last declaration
                     self.broadcast_player_list()
 
             elif "ROLL_DICE" == key:
