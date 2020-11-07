@@ -35,7 +35,7 @@ class GameState:
         self.dice = (1, 0)  # (1, 0) indicating initial state
         self.names = {}
         self.points = {}
-        self.last_declaration_tuple = (None, None)  # (Client, Dice Declaration Tuple)
+        self.last_declaration_tuple = (None, (1, 0))  # (Client, Dice Declaration Tuple)
 
     def end_turn(self):
         """
@@ -56,6 +56,9 @@ class GameState:
         print(f"broadcasting player list update: \n {output}")
         if self.player_queue:
             send(self.player_queue[0], {PRIVATE_MSG_PREFIX: "Du bist dran!"})
+        else:
+            # if no players left: reset dice!
+            self.dice = (0, 1)
 
     @staticmethod
     def is_result_better(dice1, dice2):
@@ -119,6 +122,7 @@ class GameState:
                     send(loser, {PRIVATE_MSG_PREFIX: f"Versuch's direkt noch mal, viel Glück beim nächsten Versuch!\n"
                                                      f"(du bist dran)"})
                     self.dice = (1, 0)  # reset dice
+                    self.last_declaration_tuple = (None, (1, 0))  # reset last declaration
                     self.broadcast_player_list()
 
             elif "ROLL_DICE" == key:
@@ -141,14 +145,15 @@ class GameState:
                 send(client, {SET_PLAYER: True})
                 self.broadcast_player_list()
             elif "SET_SPECTATOR" == key:
-                if client in self.player_queue:  # and self.player_queue[0] != client (do your turn first yo)
+                # stop player from spectating if it's their turn; unless there's only 1 player left
+                if client in self.player_queue and len(self.player_queue) == 1 or self.player_queue[0] != client:  # and self.player_queue[0] != client (do your turn first yo)
                     self.player_queue.remove(client)
-                if client not in self.spectators:
                     self.spectators.append(client)
-                send(client, {SET_SPECTATOR: True})
-                self.broadcast_player_list()
+                    send(client, {SET_SPECTATOR: True})
+                    self.broadcast_player_list()
             elif DICE_MSG_PREFIX == key:
-                if self.player_queue[0] == client:
+                # only process the message if the player called a result higher than the previously stored "best" result
+                if self.player_queue[0] == client and not GameState.is_result_better(self.last_declaration_tuple[1], message[key]):
                     self.last_declaration_tuple = (client, message[key])
                     declaration_msg = f"Du hast ({self.dice[0]}/{self.dice[1]}) gewürfelt und ({message[key][0]}/{message[key][1]}) angegeben.\n"
                     if GameState.is_result_better(message[key], self.dice):
